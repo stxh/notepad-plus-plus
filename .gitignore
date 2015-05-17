@@ -1,9 +1,8 @@
 #-------------------------------------------------------------------------------
 *.exe
 *.xml
-bin
 *[Rr]elease*
-PowerEditor/bin/npp.pdb
+PowerEditor/bin/*
 
 # VisualStudio
 
