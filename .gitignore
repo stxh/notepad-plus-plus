@@ -1,4 +1,10 @@
 #-------------------------------------------------------------------------------
+*.exe
+*.xml
+bin
+*[Rr]elease*
+PowerEditor/bin/npp.pdb
+
 # VisualStudio
 
 #-- User-specific files
