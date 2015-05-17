@@ -19,6 +19,7 @@ x64/
 x86/
 #[Bb]in/
 [Oo]bj/
+*.pdb
 
 #-- Visual C++ cache files
 ipch/
