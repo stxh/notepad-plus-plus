@@ -26,11 +26,14 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+
+#include <Shlobj.h>
+#include <uxtheme.h>
+
 #include "AboutDlg.h"
 #include "Parameters.h"
 
-BOOL CALLBACK AboutDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AboutDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) 
 	{
@@ -39,17 +42,11 @@ BOOL CALLBACK AboutDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 			HWND compileDateHandle = ::GetDlgItem(_hSelf, IDC_BUILD_DATETIME);
 			generic_string buildTime = TEXT("Build time : ");
 
-#ifdef UNICODE
 			WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
 			buildTime +=  wmc->char2wchar(__DATE__, CP_ACP);
 			buildTime += TEXT(" - ");
 			buildTime +=  wmc->char2wchar(__TIME__, CP_ACP);
 
-#else
-			buildTime +=  __DATE__;
-			buildTime += TEXT(" - ");
-			buildTime +=  __TIME__;
-#endif
 			::SendMessage(compileDateHandle, WM_SETTEXT, 0, (LPARAM)buildTime.c_str());
 			::EnableWindow(compileDateHandle, FALSE);
 
@@ -58,13 +55,10 @@ BOOL CALLBACK AboutDlg::run_dlgProc(UINT message, WPARAM wParam, LPARAM lParam)
 
             _emailLink.init(_hInst, _hSelf);
 			//_emailLink.create(::GetDlgItem(_hSelf, IDC_AUTHOR_NAME), TEXT("mailto:don.h@free.fr"));
-			_emailLink.create(::GetDlgItem(_hSelf, IDC_AUTHOR_NAME), TEXT("http://notepad-plus-plus.org/contributors"));
+			_emailLink.create(::GetDlgItem(_hSelf, IDC_AUTHOR_NAME), TEXT("https://notepad-plus-plus.org/contributors"));
 
             _pageLink.init(_hInst, _hSelf);
-            _pageLink.create(::GetDlgItem(_hSelf, IDC_HOME_ADDR), TEXT("http://notepad-plus-plus.org/"));
-
-			//_onLineHelp.init(_hInst, _hSelf);
-            //_onLineHelp.create(::GetDlgItem(_hSelf, IDC_ONLINEHELP_ADDR), TEXT("http://notepad-plus.sourceforge.net/uk/generalFAQ.php"));
+            _pageLink.create(::GetDlgItem(_hSelf, IDC_HOME_ADDR), TEXT("https://notepad-plus-plus.org/"));
 
 			getClientRect(_rc);
 

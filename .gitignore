@@ -21,6 +21,7 @@ x86/
 *.pdb
 
 #-- Visual C++ cache files
+.vs/
 ipch/
 *.aps
 *.ncb
@@ -55,8 +56,37 @@ UpgradeLog*.htm
 *.log
 .builds
 *.pidb
-*.log
+PowerEditor/bin/notepad++.exe
+PowerEditor/bin/SciLexer.dll
+PowerEditor/bin/config.xml
+PowerEditor/bin/stylers.xml
+PowerEditor/bin/langs.xml
+PowerEditor/bin/config.model.xml
+PowerEditor/bin/stylers.model.xml
+PowerEditor/bin/langs.model.xml
+PowerEditor/bin/contextMenu.xml
+PowerEditor/bin/nativeLang.xml
+PowerEditor/bin/session.xml
+PowerEditor/bin/functionList.xml
+PowerEditor/bin/shortcuts.xml
+PowerEditor/bin/backup/
+PowerEditor/bin/localization/
+PowerEditor/bin/plugins/
+PowerEditor/installer/build/
+PowerEditor/installer/minimalist/
+PowerEditor/installer/zipped.package.release/
+PowerEditor/visual.net/Unicode Debug/
+PowerEditor/visual.net/Unicode Release/
+PowerEditor/visual.net/notepadPlus.sln
 
+
+# scintilla - generated files
+scintilla/bin/SciLexer.*
+scintilla/bin/Scintilla.*
+scintilla/win32/*.lib
+scintilla/win32/ScintRes.res
+scintilla/boostregex/bin
+scintilla/boostregex/boostpath.mak
 
 #-------------------------------------------------------------------------------
 # Windows
@@ -80,3 +110,11 @@ $RECYCLE.BIN/
 *.DS_Store
 *.swp
 *.out
+scintilla/.hgeol
+scintilla/.hgtags
+scintilla/cppcheck.suppress
+scintilla/.hg_archival.txt
+scintilla/.hgignore
+scintilla/bin/__init__.py
+PowerEditor/bin/NppShell64_06.dll
+PowerEditor/bin/NppShell_06.dll

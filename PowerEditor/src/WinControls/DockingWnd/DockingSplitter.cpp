@@ -26,7 +26,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+
 #include "DockingSplitter.h"
 #include "Notepad_plus_msgs.h"
 #include "Parameters.h"
@@ -135,7 +135,7 @@ LRESULT CALLBACK DockingSplitter::staticWinProc(HWND hwnd, UINT message, WPARAM 
 			return TRUE;
 
 		default :
-			pDockingSplitter = (DockingSplitter *)::GetWindowLongPtr(hwnd, GWL_USERDATA);
+			pDockingSplitter = (DockingSplitter *)::GetWindowLongPtr(hwnd, GWLP_USERDATA);
 			if (!pDockingSplitter)
 				return ::DefWindowProc(hwnd, message, wParam, lParam);
 			return pDockingSplitter->runProc(hwnd, message, wParam, lParam);

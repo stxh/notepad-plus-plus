@@ -25,15 +25,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-
-#include "precompiledHeaders.h"
+#include <time.h>
+#include <shlwapi.h>
+#include <Shlobj.h>
 #include "Parameters.h"
 #include "FileDialog.h"
 #include "ScintillaEditView.h"
 #include "keys.h"
 #include "localization.h"
+#include "localizationString.h"
 #include "UserDefineDialog.h"
-#include "../src/sqlite/sqlite3.h"
+
+using namespace std;
 
 struct WinMenuKeyDefinition {	//more or less matches accelerator table definition, easy copy/paste
 	//const TCHAR * name;	//name retrieved from menu?
@@ -127,8 +130,14 @@ WinMenuKeyDefinition winKeyDefs[] = {
 	{VK_SPACE,	IDM_EDIT_FUNCCALLTIP,				true,  false, true,  NULL},
 	{VK_R,		IDM_EDIT_RTL,						true,  true,  false, NULL},
 	{VK_L,		IDM_EDIT_LTR,						true,  true,  false, NULL},
-	{VK_NULL,	IDM_EDIT_SORTLINES_ASCENDING,		false, false, false, NULL},
-	{VK_NULL,	IDM_EDIT_SORTLINES_DESCENDING,		false, false, false,  NULL},
+	{VK_NULL,	IDM_EDIT_SORTLINES_LEXICOGRAPHIC_ASCENDING,	 false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_LEXICOGRAPHIC_DESCENDING, false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_INTEGER_ASCENDING,		 false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_INTEGER_DESCENDING,		 false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_DECIMALCOMMA_ASCENDING,	 false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_DECIMALCOMMA_DESCENDING,  false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_DECIMALDOT_ASCENDING,	 false, false, false, NULL },
+	{VK_NULL,	IDM_EDIT_SORTLINES_DECIMALDOT_DESCENDING,	 false, false, false, NULL },
 	{VK_RETURN,	IDM_EDIT_BLANKLINEABOVECURRENT,		true,  true, false, NULL},
 	{VK_RETURN,	IDM_EDIT_BLANKLINEBELOWCURRENT,		true,  true, true,  NULL},
 	{VK_F,		IDM_SEARCH_FIND,					true,  false, false, NULL},
@@ -490,8 +499,6 @@ static int getKwClassFromName(const TCHAR *str) {
 	return -1;
 };
 
-#ifdef UNICODE
-#include "localizationString.h"
 
 wstring LocalizationSwitcher::getLangFromXmlFileName(const wchar_t *fn) const
 {
@@ -534,8 +541,6 @@ bool LocalizationSwitcher::switchToLang(wchar_t *lang2switch) const
 
 	return ::CopyFileW(langPath.c_str(), _nativeLangPath.c_str(), FALSE) != FALSE;
 }
-
-#endif
 
 
 generic_string ThemeSwitcher::getThemeFromXmlFileName(const TCHAR *xmlFullPath) const
@@ -661,7 +666,7 @@ NppParameters::NppParameters() :	_pXmlDoc(NULL),_pXmlUserDoc(NULL), _pXmlUserSty
 									_pXmlSessionDoc(NULL), _pXmlBlacklistDoc(NULL),	_nbUserLang(0), _nbExternalLang(0),\
 									_hUXTheme(NULL), _transparentFuncAddr(NULL), _enableThemeDialogTextureFuncAddr(NULL),\
 									_pNativeLangSpeaker(NULL), _isTaskListRBUTTONUP_Active(false), _fileSaveDlgFilterIndex(-1),\
-									_asNotepadStyle(false), _isFindReplacing(false)
+									_asNotepadStyle(false), _isFindReplacing(false), _initialCloudChoice(TEXT(""))
 {
 	// init import UDL array
 	_nbImportedULD = 0;
@@ -887,255 +892,6 @@ int base64ToAscii(char *dest, const char *base64Str)
 	return k;
 }
 
-
-/*
-Spec for settings on cloud (dropbox, oneDrive and googleDrive)
-    ON LOAD:
-    1. if doLocalConf.xml, check nppInstalled/cloud/choice
-    2. check the validity of 3 cloud and get the npp_cloud_folder according the choice.
-    3. Set npp_cloud_folder as user_dir.
-    
-    Attention: settings files in cloud_folder should never be removed or erased.
-    
-    ON SET:
-    1. write "dropbox", "oneDrive" or "googleDrive" in nppInstalled/cloud/choice file, if choice file doesn't exist, create it.
-    2. ask user to restart Notepad++
-    3. if no settings files in npp_cloud_folder , write settings before exiting.
-
-    ON UNSET:
-    1. remove nppInstalled/cloud/choice file
-    2. ask user to restart Notepad++
-   
-   Here are the list of xml settings used by Notepad++:
-   1. config.xml: saveed on exit
-   2. stylers.xml: saved on modified
-   3. langs.xml: no save
-   4. session.xml: saveed on exit or : all the time, if session snapshot is enabled.
-   5. shortcuts.xml: saveed on exit
-   6. userDefineLang.xml: saveed on exit
-   7. functionlist.xml: no save
-   8. contextMenu.xml: no save
-   9. nativeLang.xml: no save
-*/
-
-generic_string NppParameters::getCloudSettingsPath(CloudChoice cloudChoice)
-{
-	generic_string cloudSettingsPath = TEXT("");
-	
-	//
-	// check if dropbox is present
-	//
-	generic_string settingsPath4dropbox = TEXT("");
-
-	ITEMIDLIST *pidl;
-
-	const HRESULT specialFolderLocationResult_1 = SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &pidl);
-	if ( !SUCCEEDED( specialFolderLocationResult_1 ) )
-	{
-		return cloudSettingsPath;
-	}
-	TCHAR tmp[MAX_PATH];
-	SHGetPathFromIDList(pidl, tmp);
-	generic_string dropboxInfoDB = tmp;
-
-	PathAppend(dropboxInfoDB, TEXT("Dropbox\\host.db"));
-	try {
-		if (::PathFileExists(dropboxInfoDB.c_str()))
-		{
-			// get whole content
-			std::string content = getFileContent(dropboxInfoDB.c_str());
-			if (content != "")
-			{
-				// get the second line
-				const char *pB64 = content.c_str();
-				for (size_t i = 0; i < content.length(); ++i)
-				{
-					++pB64;
-					if (*pB64 == '\n')
-					{
-						++pB64;
-						break;
-					}
-				}
-
-				// decode base64
-				size_t b64Len = strlen(pB64);
-				size_t asciiLen = getAsciiLenFromBase64Len(b64Len);
-				if (asciiLen)
-				{
-					char * pAsciiText = new char[asciiLen + 1];
-					int len = base64ToAscii(pAsciiText, pB64);
-					if (len)
-					{
-						//::MessageBoxA(NULL, pAsciiText, "", MB_OK);
-						const size_t maxLen = 2048;
-						wchar_t dest[maxLen];
-						mbstowcs(dest, pAsciiText, maxLen);
-						if (::PathFileExists(dest))
-						{
-							settingsPath4dropbox = dest;
-							_nppGUI._availableClouds |= DROPBOX_AVAILABLE;
-						}
-					}
-					delete[] pAsciiText;
-				}
-			}
-		}
-	} catch (...) {
-		//printStr(TEXT("JsonCpp exception captured"));
-	}
-
-	//
-	// TODO: check if OneDrive is present
-	//
-
-	// Get value from registry
-	generic_string settingsPath4OneDrive = TEXT("");
-	HKEY hOneDriveKey;
-	LRESULT res = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SkyDrive"), 0, KEY_READ, &hOneDriveKey);
-	if (res != ERROR_SUCCESS)
-	{
-		res = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\SkyDrive"), 0, KEY_READ, &hOneDriveKey);
-	}
-
-	if (res == ERROR_SUCCESS)
-	{
-		TCHAR valData[MAX_PATH];
-		int valDataLen = MAX_PATH * sizeof(TCHAR);
-		int valType;
-		::RegQueryValueEx(hOneDriveKey, TEXT("UserFolder"), NULL, (LPDWORD)&valType, (LPBYTE)valData, (LPDWORD)&valDataLen);
-
-		if (::PathFileExists(valData))
-		{
-			settingsPath4OneDrive = valData;
-			_nppGUI._availableClouds |= ONEDRIVE_AVAILABLE;
-		}
-		::RegCloseKey(hOneDriveKey);
-	}
-
-	//
-	// TODO: check if google drive is present
-	//
-	generic_string googleDriveInfoDB = TEXT("");
-
-	HKEY hGoogleDriveKey;
-	res = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Google\\Drive"), 0, KEY_READ, &hGoogleDriveKey);
-
-	if (res == ERROR_SUCCESS)
-	{
-		TCHAR valData[MAX_PATH];
-		int valDataLen = MAX_PATH * sizeof(TCHAR);
-		int valType;
-		::RegQueryValueEx(hGoogleDriveKey, TEXT("Path"), NULL, (LPDWORD)&valType, (LPBYTE)valData, (LPDWORD)&valDataLen);
-
-		if (::PathFileExists(valData)) // Windows 8
-		{
-			googleDriveInfoDB = valData;
-			PathAppend(googleDriveInfoDB, TEXT("\\user_default\\sync_config.db"));
-		}
-		else // Windows 7 
-		{
-			// try to guess google drive info path
-			ITEMIDLIST *pidl2;
-			SHGetSpecialFolderLocation(NULL, CSIDL_LOCAL_APPDATA, &pidl2);
-			TCHAR tmp2[MAX_PATH];
-			SHGetPathFromIDList(pidl2, tmp2);
-			googleDriveInfoDB = tmp2;
-
-			PathAppend(googleDriveInfoDB, TEXT("Google\\Drive\\sync_config.db"));
-		}
-		::RegCloseKey(hGoogleDriveKey);
-	}
-
-	generic_string settingsPath4GoogleDrive = TEXT("");
-
-	if (::PathFileExists(googleDriveInfoDB.c_str()))
-	{
-		try {
-			sqlite3 *handle;
-			sqlite3_stmt *stmt;
-
-			// try to create the database. If it doesnt exist, it would be created
-			// pass a pointer to the pointer to sqlite3, in short sqlite3**
-			char dest[MAX_PATH];
-			wcstombs(dest, googleDriveInfoDB.c_str(), sizeof(dest));
-			int retval = sqlite3_open(dest, &handle);
-
-			// If connection failed, handle returns NULL
-			if (retval ==  SQLITE_OK)
-			{
-				char query[] = "select * from data where entry_key='local_sync_root_path'";
-
-				retval = sqlite3_prepare_v2(handle, query, -1, &stmt, 0); //sqlite3_prepare_v2() interfaces use UTF-8
-				if (retval == SQLITE_OK)
-				{
-					// fetch a row’s status
-					retval = sqlite3_step(stmt);
-
-					if (retval == SQLITE_ROW) 
-					{
-						const unsigned char *text;
-						text = sqlite3_column_text(stmt, 2);
-
-						const size_t maxLen = 2048;
-						wchar_t googleFolder[maxLen];
-						mbstowcs(googleFolder, (char *)(text + 4), maxLen);
-						if (::PathFileExists(googleFolder))
-						{
-							settingsPath4GoogleDrive = googleFolder;
-							_nppGUI._availableClouds |= GOOGLEDRIVE_AVAILABLE;
-						}
-					}
-				}
-				sqlite3_close(handle);
-			}
-			
-		} catch(...) {
-			// Do nothing
-		}
-	}
-
-	if (cloudChoice == dropbox && (_nppGUI._availableClouds & DROPBOX_AVAILABLE))
-	{
-		cloudSettingsPath = settingsPath4dropbox;
-		PathAppend(cloudSettingsPath, TEXT("Notepad++"));
-
-		// The folder cloud_folder\Notepad++ should exist.
-		// if it doesn't, it means this folder was removed by user, we create it anyway
-		if (!PathFileExists(cloudSettingsPath.c_str()))
-		{
-			::CreateDirectory(cloudSettingsPath.c_str(), NULL);
-		}
-		_nppGUI._cloudChoice = dropbox;
-	}
-	else if (cloudChoice == oneDrive)
-	{
-		cloudSettingsPath = settingsPath4OneDrive;
-		PathAppend(cloudSettingsPath, TEXT("Notepad++"));
-
-		if (!PathFileExists(cloudSettingsPath.c_str()))
-		{
-			::CreateDirectory(cloudSettingsPath.c_str(), NULL);
-		}
-		_nppGUI._cloudChoice = oneDrive;
-	}
-	else if (cloudChoice == googleDrive)
-	{
-		cloudSettingsPath = settingsPath4GoogleDrive;
-		PathAppend(cloudSettingsPath, TEXT("Notepad++"));
-		
-		if (!PathFileExists(cloudSettingsPath.c_str()))
-		{
-			::CreateDirectory(cloudSettingsPath.c_str(), NULL);
-		}
-		_nppGUI._cloudChoice = googleDrive;
-	}
-	//else if (cloudChoice == noCloud)
-	//	cloudSettingsPath is always empty
-
-	return cloudSettingsPath;
-}
-
 generic_string NppParameters::getSettingsFolder()
 {
 	generic_string settingsFolderPath;
@@ -1224,36 +980,24 @@ bool NppParameters::load()
 	_sessionPath = _userPath; // Session stock the absolute file path, it should never be on cloud
 
 	// Detection cloud settings
-	//bool isCloud = false;
 	generic_string cloudChoicePath = _userPath;
 	cloudChoicePath += TEXT("\\cloud\\choice");
 	
-	CloudChoice cloudChoice = noCloud;
 	// cloudChoicePath doesn't exist, just quit
 	if (::PathFileExists(cloudChoicePath.c_str()))
 	{
 		// Read cloud choice
 		std::string cloudChoiceStr = getFileContent(cloudChoicePath.c_str());
-		if (cloudChoiceStr == "dropbox")
+		WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
+		std::wstring cloudChoiceStrW = wmc->char2wchar(cloudChoiceStr.c_str(), SC_CP_UTF8);
+		
+		if (cloudChoiceStrW != TEXT("") && ::PathFileExists(cloudChoiceStrW.c_str()))
 		{
-			cloudChoice = dropbox;
-		}
-		else if (cloudChoiceStr == "oneDrive")
-		{
-			cloudChoice = oneDrive;
-		}
-		else if (cloudChoiceStr == "googleDrive")
-		{
-			cloudChoice = googleDrive;
+			_userPath = cloudChoiceStrW;
+			_nppGUI._cloudPath = cloudChoiceStrW;
+			_initialCloudChoice = _nppGUI._cloudPath;
 		}
 	}
-
-	generic_string cloudPath = getCloudSettingsPath(cloudChoice);
-	if (cloudPath != TEXT("") && ::PathFileExists(cloudPath.c_str()))
-	{
-		_userPath = cloudPath;
-	}
-	//}
 
 
 	//-------------------------------------//
@@ -1622,10 +1366,7 @@ void NppParameters::setFontList(HWND hWnd)
 	lf.lfPitchAndFamily = 0;
 	HDC hDC = ::GetDC(hWnd);
 
-	::EnumFontFamiliesEx(hDC, 
-						&lf, 
-						(FONTENUMPROC) EnumFontFamExProc, 
-						(LPARAM) &_fontlist, 0);
+	::EnumFontFamiliesEx(hDC, &lf, EnumFontFamExProc, (LPARAM)&_fontlist, 0);
 }
 
 void NppParameters::getLangKeywordsFromXmlTree()
@@ -1829,6 +1570,91 @@ bool NppParameters::reloadContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU plug
 	return getContextMenuFromXmlTree(mainMenuHadle, pluginsMenu);
 }
 
+int NppParameters::getCmdIdFromMenuEntryItemName(HMENU mainMenuHadle, generic_string menuEntryName, generic_string menuItemName)
+{
+	int nbMenuEntry = ::GetMenuItemCount(mainMenuHadle);
+	for (int i = 0; i < nbMenuEntry; ++i)
+	{
+		TCHAR menuEntryString[64];
+		::GetMenuString(mainMenuHadle, i, menuEntryString, 64, MF_BYPOSITION);
+		if (generic_stricmp(menuEntryName.c_str(), purgeMenuItemString(menuEntryString).c_str()) == 0)
+		{
+			vector< pair<HMENU, int> > parentMenuPos;
+			HMENU topMenu = ::GetSubMenu(mainMenuHadle, i);
+			int maxTopMenuPos = ::GetMenuItemCount(topMenu);
+			HMENU currMenu = topMenu;
+			int currMaxMenuPos = maxTopMenuPos;
+
+			int currMenuPos = 0;
+			bool notFound = false;
+
+			do {
+				if (::GetSubMenu(currMenu, currMenuPos))
+				{
+					//  Go into sub menu
+					parentMenuPos.push_back(::make_pair(currMenu, currMenuPos));
+					currMenu = ::GetSubMenu(currMenu, currMenuPos);
+					currMenuPos = 0;
+					currMaxMenuPos = ::GetMenuItemCount(currMenu);
+				}
+				else
+				{
+					//  Check current menu position.
+					TCHAR cmdStr[256];
+					::GetMenuString(currMenu, currMenuPos, cmdStr, 256, MF_BYPOSITION);
+					if (generic_stricmp(menuItemName.c_str(), purgeMenuItemString(cmdStr).c_str()) == 0)
+					{
+						return ::GetMenuItemID(currMenu, currMenuPos);
+					}
+
+					if ((currMenuPos >= currMaxMenuPos) && (parentMenuPos.size() > 0))
+					{
+						currMenu = parentMenuPos.back().first;
+						currMenuPos = parentMenuPos.back().second;
+						parentMenuPos.pop_back();
+						currMaxMenuPos = ::GetMenuItemCount(currMenu);
+					}
+
+					if ((currMenu == topMenu) && (currMenuPos >= maxTopMenuPos))
+					{
+						notFound = true;
+					}
+					else
+					{
+						++currMenuPos;
+					}
+				}
+			} while (!notFound);
+		}
+	}
+	return -1;
+}
+
+int NppParameters::getPluginCmdIdFromMenuEntryItemName(HMENU pluginsMenu, generic_string pluginName, generic_string pluginCmdName)
+{
+	int nbPlugins = ::GetMenuItemCount(pluginsMenu);
+	for (int i = 0; i < nbPlugins; ++i)
+	{
+		TCHAR menuItemString[256];
+		::GetMenuString(pluginsMenu, i, menuItemString, 256, MF_BYPOSITION);
+		if (generic_stricmp(pluginName.c_str(), purgeMenuItemString(menuItemString).c_str()) == 0)
+		{
+			HMENU pluginMenu = ::GetSubMenu(pluginsMenu, i);
+			int nbPluginCmd = ::GetMenuItemCount(pluginMenu);
+			for (int j = 0; j < nbPluginCmd; ++j)
+			{
+				TCHAR pluginCmdStr[256];
+				::GetMenuString(pluginMenu, j, pluginCmdStr, 256, MF_BYPOSITION);
+				if (generic_stricmp(pluginCmdName.c_str(), purgeMenuItemString(pluginCmdStr).c_str()) == 0)
+				{
+					return ::GetMenuItemID(pluginMenu, j);
+				}
+			}
+		}
+	}
+	return -1;
+}
+
 bool NppParameters::getContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU pluginsMenu)
 {
 	if (!_pXmlContextMenuDocA)
@@ -1837,9 +1663,7 @@ bool NppParameters::getContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU plugins
 	if (!root) 
 		return false;
 
-#ifdef UNICODE
 	WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
-#endif
 
 	TiXmlNodeA *contextMenuRoot = root->FirstChildElement("ScintillaContextMenu");
 	if (contextMenuRoot)
@@ -1853,13 +1677,9 @@ bool NppParameters::getContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU plugins
 
 			generic_string folderName;
 			generic_string displayAs;
-#ifdef UNICODE
 			folderName = folderNameA?wmc->char2wchar(folderNameA, SC_CP_UTF8):TEXT("");
 			displayAs = displayAsA?wmc->char2wchar(displayAsA, SC_CP_UTF8):TEXT("");
-#else
-			folderName = folderNameA?folderNameA:"";
-			displayAs = displayAsA?displayAsA:"";
-#endif
+
 			int id;
 			const char *idStr = (childNode->ToElement())->Attribute("id", &id);
 			if (idStr)
@@ -1873,68 +1693,14 @@ bool NppParameters::getContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU plugins
 
 				generic_string menuEntryName;
 				generic_string menuItemName;
-#ifdef UNICODE
 				menuEntryName = menuEntryNameA?wmc->char2wchar(menuEntryNameA, SC_CP_UTF8):TEXT("");
 				menuItemName = menuItemNameA?wmc->char2wchar(menuItemNameA, SC_CP_UTF8):TEXT("");
-#else
-				menuEntryName = menuEntryNameA?menuEntryNameA:"";
-				menuItemName = menuItemNameA?menuItemNameA:"";
-#endif
+
 				if (menuEntryName != TEXT("") && menuItemName != TEXT(""))
 				{
-					int nbMenuEntry = ::GetMenuItemCount(mainMenuHadle);
-					for (int i = 0 ; i < nbMenuEntry ; ++i)
-					{
-						TCHAR menuEntryString[64];
-						::GetMenuString(mainMenuHadle, i, menuEntryString, 64, MF_BYPOSITION);
-						if (generic_stricmp(menuEntryName.c_str(), purgeMenuItemString(menuEntryString).c_str()) == 0)
-						{
-							vector< pair<HMENU, int> > parentMenuPos;
-							HMENU topMenu = ::GetSubMenu(mainMenuHadle, i);
-							int maxTopMenuPos = ::GetMenuItemCount(topMenu);
-							HMENU currMenu = topMenu;
-							int currMaxMenuPos = maxTopMenuPos;
-
-							int currMenuPos = 0;
-							bool notFound = false;
-
-							do {
-								if ( ::GetSubMenu( currMenu, currMenuPos ) ) {
-									//  Go into sub menu
-									parentMenuPos.push_back( ::make_pair( currMenu, currMenuPos ) );
-									currMenu = ::GetSubMenu( currMenu, currMenuPos );
-									currMenuPos = 0;
-									currMaxMenuPos = ::GetMenuItemCount(currMenu);
-								}
-								else {
-									//  Check current menu position.
-									TCHAR cmdStr[256];
-									::GetMenuString(currMenu, currMenuPos, cmdStr, 256, MF_BYPOSITION);
-									if (generic_stricmp(menuItemName.c_str(), purgeMenuItemString(cmdStr).c_str()) == 0)
-									{
-										int cmdId = ::GetMenuItemID(currMenu, currMenuPos);
-										_contextMenuItems.push_back(MenuItemUnit(cmdId, displayAs.c_str(), folderName.c_str()));
-										break;
-									}
-									
-									if ( ( currMenuPos >= currMaxMenuPos ) && ( parentMenuPos.size() > 0 ) ) {
-										currMenu = parentMenuPos.back().first;
-										currMenuPos = parentMenuPos.back().second;
-										parentMenuPos.pop_back();
-										currMaxMenuPos = ::GetMenuItemCount( currMenu );
-									}
-
-									if ( ( currMenu == topMenu ) && ( currMenuPos >= maxTopMenuPos ) ) {
-										notFound = true;
-									}
-									else {
-										++currMenuPos;
-									}
-								}
-							} while (! notFound );
-							break;
-						}
-					}
+					int cmd = getCmdIdFromMenuEntryItemName(mainMenuHadle, menuEntryName, menuItemName);
+					if (cmd != -1)
+						_contextMenuItems.push_back(MenuItemUnit(cmd, displayAs.c_str(), folderName.c_str()));
 				}
 				else
 				{
@@ -1943,39 +1709,15 @@ bool NppParameters::getContextMenuFromXmlTree(HMENU mainMenuHadle, HMENU plugins
 
 					generic_string pluginName;
 					generic_string pluginCmdName;
-#ifdef UNICODE
 					pluginName = pluginNameA?wmc->char2wchar(pluginNameA, SC_CP_UTF8):TEXT("");
 					pluginCmdName = pluginCmdNameA?wmc->char2wchar(pluginCmdNameA, SC_CP_UTF8):TEXT("");
-#else
-					pluginName = pluginNameA?pluginNameA:"";
-					pluginCmdName = pluginCmdNameA?pluginCmdNameA:"";
-#endif
+
 					// if plugin menu existing plls the value of PluginEntryName and PluginCommandItemName are valid
 					if (pluginsMenu && pluginName != TEXT("") && pluginCmdName != TEXT(""))
 					{
-						int nbPlugins = ::GetMenuItemCount(pluginsMenu);
-						for (int i = 0 ; i < nbPlugins ; ++i)
-						{
-							TCHAR menuItemString[256];
-							::GetMenuString(pluginsMenu, i, menuItemString, 256, MF_BYPOSITION);
-							if (generic_stricmp(pluginName.c_str(), purgeMenuItemString(menuItemString).c_str()) == 0)
-							{
-								HMENU pluginMenu = ::GetSubMenu(pluginsMenu, i);
-								int nbPluginCmd = ::GetMenuItemCount(pluginMenu);
-								for (int j = 0 ; j < nbPluginCmd ; ++j)
-								{
-									TCHAR pluginCmdStr[256];
-									::GetMenuString(pluginMenu, j, pluginCmdStr, 256, MF_BYPOSITION);
-									if (generic_stricmp(pluginCmdName.c_str(), purgeMenuItemString(pluginCmdStr).c_str()) == 0)
-									{
-										int pluginCmdId = ::GetMenuItemID(pluginMenu, j);
-										_contextMenuItems.push_back(MenuItemUnit(pluginCmdId, displayAs.c_str(), folderName.c_str()));
-										break;
-									}
-								}
-								break;
-							}
-						}
+						int pluginCmdId = getPluginCmdIdFromMenuEntryItemName(pluginsMenu, pluginName, pluginCmdName);
+						if (pluginCmdId != -1)
+							_contextMenuItems.push_back(MenuItemUnit(pluginCmdId, displayAs.c_str(), folderName.c_str()));
 					}
 				}
 			}
@@ -2687,12 +2429,66 @@ LangType NppParameters::getLangFromExt(const TCHAR *ext)
 	return L_TEXT;
 }
 
-void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
+void NppParameters::setCloudChoice(const TCHAR *pathChoice)
 {
-	generic_string cloudSettingsPath = getCloudSettingsPath(choice);
+	generic_string cloudChoicePath = getSettingsFolder();
+	cloudChoicePath += TEXT("\\cloud\\");
+
+	if (!PathFileExists(cloudChoicePath.c_str()))
+	{
+		::CreateDirectory(cloudChoicePath.c_str(), NULL);
+	}
+	cloudChoicePath += TEXT("choice");
+
+	WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
+	std::string cloudPathA = wmc->wchar2char(pathChoice, SC_CP_UTF8);
+
+	writeFileContent(cloudChoicePath.c_str(), cloudPathA.c_str());
+}
+
+void NppParameters::removeCloudChoice()
+{
+	generic_string cloudChoicePath = getSettingsFolder();
+
+	cloudChoicePath += TEXT("\\cloud\\choice");
+	if (PathFileExists(cloudChoicePath.c_str()))
+	{
+		::DeleteFile(cloudChoicePath.c_str());
+	}
+}
+
+bool NppParameters::isCloudPathChanged() const
+{
+	if (_initialCloudChoice == _nppGUI._cloudPath)
+		return false;
+	else if (_initialCloudChoice.size() - _nppGUI._cloudPath.size() == 1)
+	{
+		TCHAR c = _initialCloudChoice.at(_initialCloudChoice.size()-1);
+		if (c == '\\' || c == '/')
+		{
+			if (_initialCloudChoice.find(_nppGUI._cloudPath) == 0)
+				return false;
+		}
+	}
+	else if (_nppGUI._cloudPath.size() - _initialCloudChoice.size() == 1)
+	{
+		TCHAR c = _nppGUI._cloudPath.at(_nppGUI._cloudPath.size() - 1);
+		if (c == '\\' || c == '/')
+		{
+			if (_nppGUI._cloudPath.find(_initialCloudChoice) == 0)
+				return false;
+		}
+	}
+	return true;
+}
+
+bool NppParameters::writeSettingsFilesOnCloudForThe1stTime(const generic_string & cloudSettingsPath)
+{
+	bool isOK = false;
+
 	if (cloudSettingsPath == TEXT(""))
 	{
-		return;
+		return false;
 	}
 	
 	// config.xml
@@ -2700,7 +2496,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudConfigPath, TEXT("config.xml"));
 	if (!::PathFileExists(cloudConfigPath.c_str()) && _pXmlUserDoc)
 	{
-		_pXmlUserDoc->SaveFile(cloudConfigPath.c_str());
+		isOK = _pXmlUserDoc->SaveFile(cloudConfigPath.c_str());
+		if (!isOK)
+			return false;
 	}
 
 	// stylers.xml
@@ -2708,7 +2506,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudStylersPath, TEXT("stylers.xml"));
 	if (!::PathFileExists(cloudStylersPath.c_str()) && _pXmlUserStylerDoc)
 	{
-		_pXmlUserStylerDoc->SaveFile(cloudStylersPath.c_str());
+		isOK = _pXmlUserStylerDoc->SaveFile(cloudStylersPath.c_str());
+		if (!isOK)
+			return false;
 	}
 
 	// langs.xml
@@ -2716,7 +2516,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudLangsPath, TEXT("langs.xml"));
 	if (!::PathFileExists(cloudLangsPath.c_str()) && _pXmlUserDoc)
 	{
-		_pXmlDoc->SaveFile(cloudLangsPath.c_str());
+		isOK = _pXmlDoc->SaveFile(cloudLangsPath.c_str());
+		if (!isOK)
+			return false;
 	}
 /*
 	// session.xml: Session stock the absolute file path, it should never be on cloud
@@ -2732,7 +2534,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudUserLangsPath, TEXT("userDefineLang.xml"));
 	if (!::PathFileExists(cloudUserLangsPath.c_str()) && _pXmlUserLangDoc)
 	{
-		_pXmlUserLangDoc->SaveFile(cloudUserLangsPath.c_str());
+		isOK = _pXmlUserLangDoc->SaveFile(cloudUserLangsPath.c_str());
+		if (!isOK)
+			return false;
 	}
 
 	// shortcuts.xml
@@ -2740,7 +2544,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudShortcutsPath, TEXT("shortcuts.xml"));
 	if (!::PathFileExists(cloudShortcutsPath.c_str()) && _pXmlShortcutDoc)
 	{
-		_pXmlShortcutDoc->SaveFile(cloudShortcutsPath.c_str());
+		isOK = _pXmlShortcutDoc->SaveFile(cloudShortcutsPath.c_str());
+		if (!isOK)
+			return false;
 	}
 
 	// contextMenu.xml
@@ -2748,7 +2554,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudContextMenuPath, TEXT("contextMenu.xml"));
 	if (!::PathFileExists(cloudContextMenuPath.c_str()) && _pXmlContextMenuDocA)
 	{
-		_pXmlContextMenuDocA->SaveUnicodeFilePath(cloudContextMenuPath.c_str());
+		isOK = _pXmlContextMenuDocA->SaveUnicodeFilePath(cloudContextMenuPath.c_str());
+		if (!isOK)
+			return false;
 	}
 
 	// nativeLang.xml
@@ -2756,7 +2564,9 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 	PathAppend(cloudNativeLangPath, TEXT("nativeLang.xml"));
 	if (!::PathFileExists(cloudNativeLangPath.c_str()) && _pXmlNativeLangDocA)
 	{
-		_pXmlNativeLangDocA->SaveUnicodeFilePath(cloudNativeLangPath.c_str());
+		isOK = _pXmlNativeLangDocA->SaveUnicodeFilePath(cloudNativeLangPath.c_str());
+		if (!isOK)
+			return false;
 	}
 	
 	/*
@@ -2768,6 +2578,7 @@ void NppParameters::writeSettingsFilesOnCloudForThe1stTime(CloudChoice choice)
 
 	}
 	*/
+	return true;
 }
 
 
@@ -3395,28 +3206,28 @@ bool NppParameters::writeProjectPanelsSettings() const
 	TiXmlNode *nppRoot = _pXmlUserDoc->FirstChild(TEXT("NotepadPlus"));
 	if (!nppRoot) return false;
 	
-	TiXmlNode *projPanelRootNode = nppRoot->FirstChildElement(TEXT("ProjectPanels"));
-	if (projPanelRootNode)
+	TiXmlNode *oldProjPanelRootNode = nppRoot->FirstChildElement(TEXT("ProjectPanels"));
+	if (nullptr != oldProjPanelRootNode)
 	{
 		// Erase the Project Panel root
-		nppRoot->RemoveChild(projPanelRootNode);
+		nppRoot->RemoveChild(oldProjPanelRootNode);
 	}
 
 	// Create the Project Panel root
-	projPanelRootNode = new TiXmlElement(TEXT("ProjectPanels"));
+	TiXmlElement projPanelRootNode{TEXT("ProjectPanels")};
 
 	// Add 3 Project Panel parameters
 	for (int i = 0 ; i < 3 ; ++i)
 	{
-		TiXmlElement projPanelNode(TEXT("ProjectPanel"));
+		TiXmlElement projPanelNode{TEXT("ProjectPanel")};
 		(projPanelNode.ToElement())->SetAttribute(TEXT("id"), i);
 		(projPanelNode.ToElement())->SetAttribute(TEXT("workSpaceFile"), _workSpaceFilePathes[i]);
 
-		(projPanelRootNode->ToElement())->InsertEndChild(projPanelNode);
+		(projPanelRootNode.ToElement())->InsertEndChild(projPanelNode);
 	}
 
 	// (Re)Insert the Project Panel root
-	(nppRoot->ToElement())->InsertEndChild(*projPanelRootNode);
+	(nppRoot->ToElement())->InsertEndChild(projPanelRootNode);
 	return true;
 }
 
@@ -4636,18 +4447,7 @@ void NppParameters::feedScintillaParam(TiXmlNode *node)
 		else if (!lstrcmp(nm, TEXT("hide")))
 			_svp._bookMarkMarginShow = false;
 	}
-/*
-	// doc change state Margin
-	nm = element->Attribute(TEXT("docChangeStateMargin"));
-	if (nm) 
-	{
 
-		if (!lstrcmp(nm, TEXT("show")))
-			_svp._docChangeStateMarginShow = true;
-		else if (!lstrcmp(nm, TEXT("hide")))
-			_svp._docChangeStateMarginShow = false;
-	}
-*/
     // Indent GuideLine 
     nm = element->Attribute(TEXT("indentGuideLine"));
 	if (nm)
@@ -4783,6 +4583,16 @@ void NppParameters::feedScintillaParam(TiXmlNode *node)
 		if (val >= 0 && val <= 30)
 			_svp._borderWidth = val;
 	}
+
+	// Do antialiased font
+	nm = element->Attribute(TEXT("smoothFont"));
+	if (nm)
+	{
+		if (!lstrcmp(nm, TEXT("yes")))
+			_svp._doSmoothFont = true;
+		else if (!lstrcmp(nm, TEXT("no")))
+			_svp._doSmoothFont = false;
+	}
 }
 
 
@@ -4902,6 +4712,7 @@ bool NppParameters::writeScintillaParams(const ScintillaViewParams & svp)
 	(scintNode->ToElement())->SetAttribute(TEXT("disableAdvancedScrolling"), svp._disableAdvancedScrolling?TEXT("yes"):TEXT("no"));
 	(scintNode->ToElement())->SetAttribute(TEXT("wrapSymbolShow"), svp._wrapSymbolShow?TEXT("show"):TEXT("hide"));
 	(scintNode->ToElement())->SetAttribute(TEXT("Wrap"), svp._doWrap?TEXT("yes"):TEXT("no"));
+
 	TCHAR *edgeStr = NULL;
 	if (svp._edgeMode == EDGE_NONE)
 		edgeStr = TEXT("no");
@@ -4916,6 +4727,7 @@ bool NppParameters::writeScintillaParams(const ScintillaViewParams & svp)
 	(scintNode->ToElement())->SetAttribute(TEXT("whiteSpaceShow"), svp._whiteSpaceShow?TEXT("show"):TEXT("hide"));
 	(scintNode->ToElement())->SetAttribute(TEXT("eolShow"), svp._eolShow?TEXT("show"):TEXT("hide"));
 	(scintNode->ToElement())->SetAttribute(TEXT("borderWidth"), svp._borderWidth);
+	(scintNode->ToElement())->SetAttribute(TEXT("smoothFont"), svp._doSmoothFont ? TEXT("yes") : TEXT("no"));
 	return true;
 }
 
@@ -6411,3 +6223,62 @@ void NppParameters::safeWow64EnableWow64FsRedirection(BOOL Wow64FsEnableRedirect
 	}
 }
 
+
+Date::Date(const TCHAR *dateStr)
+{ 
+	// timeStr should be Notepad++ date format : YYYYMMDD
+	assert(dateStr);
+	if (lstrlen(dateStr) == 8)
+	{
+		generic_string ds(dateStr);
+		generic_string yyyy(ds, 0, 4);
+		generic_string mm(ds, 4, 2);
+		generic_string dd(ds, 6, 2);
+
+		int y = generic_atoi(yyyy.c_str());
+		int m = generic_atoi(mm.c_str());
+		int d = generic_atoi(dd.c_str());
+
+		if ((y > 0 && y <= 9999) && (m > 0 && m <= 12) && (d > 0 && d <= 31))
+		{
+			_year = y;
+			_month = m;
+			_day = d;
+			return;
+		}
+	}
+	now();
+}
+
+// The constructor which makes the date of number of days from now
+// nbDaysFromNow could be negative if user want to make a date in the past
+// if the value of nbDaysFromNow is 0 then the date will be now
+Date::Date(int nbDaysFromNow)
+{
+	const time_t oneDay = (60 * 60 * 24);
+
+	time_t rawtime;
+	tm* timeinfo;
+
+	time(&rawtime);
+	rawtime += (nbDaysFromNow * oneDay);
+
+	timeinfo = localtime(&rawtime);
+
+	_year = timeinfo->tm_year + 1900;
+	_month = timeinfo->tm_mon + 1;
+	_day = timeinfo->tm_mday;
+}
+
+void Date::now()
+{
+	time_t rawtime;
+	tm* timeinfo;
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	_year = timeinfo->tm_year + 1900;
+	_month = timeinfo->tm_mon + 1;
+	_day = timeinfo->tm_mday;
+}

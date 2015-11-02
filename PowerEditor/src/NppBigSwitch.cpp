@@ -26,7 +26,8 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+#include <algorithm>
+#include <shlwapi.h>
 #include "Notepad_plus_Window.h"
 #include "TaskListDlg.h"
 #include "ImageListSet.h"
@@ -37,6 +38,8 @@
 #include "ProjectPanel.h"
 #include "documentMap.h"
 #include "functionListPanel.h"
+
+using namespace std;
 
 #define WM_DPICHANGED 0x02E0
 
@@ -62,10 +65,13 @@ struct SortTaskListPred
 
 LRESULT CALLBACK Notepad_plus_Window::Notepad_plus_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
+	if (hwnd == NULL)
+		return FALSE;
+
 	switch(Message)
 	{
 		case WM_NCCREATE :	// First message we get the ptr of instantiated object
-							// then stock it into GWL_USERDATA index in order to retrieve afterward
+							// then stock it into GWLP_USERDATA index in order to retrieve afterward
 		{
 			Notepad_plus_Window *pM30ide = (Notepad_plus_Window *)(((LPCREATESTRUCT)lParam)->lpCreateParams);
 			pM30ide->_hSelf = hwnd;
@@ -76,7 +82,7 @@ LRESULT CALLBACK Notepad_plus_Window::Notepad_plus_Proc(HWND hwnd, UINT Message,
 
 		default :
 		{
-			return ((Notepad_plus_Window *)::GetWindowLongPtr(hwnd, GWL_USERDATA))->runProc(hwnd, Message, wParam, lParam);
+			return ((Notepad_plus_Window *)::GetWindowLongPtr(hwnd, GWLP_USERDATA))->runProc(hwnd, Message, wParam, lParam);
 		}
 	}
 }
@@ -1216,6 +1222,14 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPa
 			return TRUE;
 		}
 
+		case NPPM_SETSMOOTHFONT:
+		{
+			int param = lParam == 0 ? SC_EFF_QUALITY_DEFAULT : SC_EFF_QUALITY_LCD_OPTIMIZED;
+			_mainEditView.execute(SCI_SETFONTQUALITY, param);
+			_subEditView.execute(SCI_SETFONTQUALITY, param);
+			return TRUE;
+		}
+
         case NPPM_INTERNAL_SETMULTISELCTION :
         {
             NppGUI & nppGUI = (NppGUI &)pNppParam->getNppGUI();
@@ -1566,9 +1580,18 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPa
 				    saveSession(currentSession);
 
 				// write settings on cloud if enabled, if the settings files don't exist
-				if (nppgui._cloudChoice != noCloud)
+				if (nppgui._cloudPath != TEXT("") && pNppParam->isCloudPathChanged())
 				{
-					pNppParam->writeSettingsFilesOnCloudForThe1stTime(nppgui._cloudChoice);
+					bool isOK = pNppParam->writeSettingsFilesOnCloudForThe1stTime(nppgui._cloudPath);
+					if (!isOK)
+					{
+						_nativeLangSpeaker.messageBox("SettingsOnCloudError",
+							_pPublicInterface->getHSelf(),
+							TEXT("It seems the path of settings on cloud is set on a read only drive,\ror on a folder needed privilege right for writting access.\rYour settings on cloud will be canceled. Please reset a coherent value via Preference dialog."),
+							TEXT("Settings on Cloud"),
+							MB_OK | MB_APPLMODAL);
+						pNppParam->removeCloudChoice();
+					}
 				}
 
                 //Sends WM_DESTROY, Notepad++ will end

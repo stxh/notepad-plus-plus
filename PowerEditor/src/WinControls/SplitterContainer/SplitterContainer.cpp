@@ -26,7 +26,8 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+#include <iostream>
+#include <windows.h>
 #include "SplitterContainer.h"
 
 bool SplitterContainer::_isRegistered = false;
@@ -126,7 +127,7 @@ LRESULT CALLBACK SplitterContainer::staticWinProc(HWND hwnd, UINT message, WPARA
 			return TRUE;
 
 		default :
-			pSplitterContainer = (SplitterContainer *)::GetWindowLongPtr(hwnd, GWL_USERDATA);
+			pSplitterContainer = (SplitterContainer *)::GetWindowLongPtr(hwnd, GWLP_USERDATA);
 			if (!pSplitterContainer)
 				return ::DefWindowProc(hwnd, message, wParam, lParam);
 			return pSplitterContainer->runProc(message, wParam, lParam);

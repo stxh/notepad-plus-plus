@@ -26,13 +26,14 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+
 #include "DockingManager.h"
 #include "DockingSplitter.h"
 #include "DockingCont.h"
 #include "Gripper.h"
 #include "parameters.h"
 
+using namespace std;
 
 BOOL DockingManager::_isRegistered = FALSE;
 
@@ -43,18 +44,24 @@ static	HHOOK			gWinCallHook = NULL;
 LRESULT CALLBACK FocusWndProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 // Callback function that handles messages (to test focus)
-LRESULT CALLBACK FocusWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
-	if (nCode == HC_ACTION && hWndServer) {
-		DockingManager *pDockingManager = (DockingManager *)::GetWindowLongPtr(hWndServer, GWL_USERDATA);
-		if (pDockingManager) {
+LRESULT CALLBACK FocusWndProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode == HC_ACTION && hWndServer)
+	{
+		DockingManager *pDockingManager = (DockingManager *)::GetWindowLongPtr(hWndServer, GWLP_USERDATA);
+		if (pDockingManager)
+		{
 			vector<DockingCont*> & vcontainer = pDockingManager->getContainerInfo();
 			CWPSTRUCT * pCwp = (CWPSTRUCT*)lParam;
-			if (pCwp->message == WM_KILLFOCUS) {
+			if (pCwp->message == WM_KILLFOCUS)
+			{
 				for (int i = 0; i < DOCKCONT_MAX; ++i)
 				{
 					vcontainer[i]->SetActive(FALSE);	//deactivate all containers
 				}
-			} else if (pCwp->message == WM_SETFOCUS) {
+			}
+			else if (pCwp->message == WM_SETFOCUS)
+			{
 				for (int i = 0; i < DOCKCONT_MAX; ++i)
 				{
 					vcontainer[i]->SetActive(IsChild(vcontainer[i]->getHSelf(), pCwp->hwnd));	//activate the container that contains the window with focus, this can be none
@@ -187,7 +194,7 @@ LRESULT CALLBACK DockingManager::staticWinProc(HWND hwnd, UINT message, WPARAM w
 			return TRUE;
 
 		default :
-			pDockingManager = (DockingManager *)::GetWindowLongPtr(hwnd, GWL_USERDATA);
+			pDockingManager = (DockingManager *)::GetWindowLongPtr(hwnd, GWLP_USERDATA);
 			if (!pDockingManager)
 				return ::DefWindowProc(hwnd, message, wParam, lParam);
 			return pDockingManager->runProc(hwnd, message, wParam, lParam);
@@ -678,10 +685,9 @@ void DockingManager::setActiveTab(int iCont, int iItem)
 
 void DockingManager::showDockableDlg(HWND hDlg, BOOL view) 
 {
-	tTbData *pTbData = NULL;
 	for (size_t i = 0, len = _vContainer.size(); i < len; ++i)
 	{
-		pTbData = _vContainer[i]->findToolbarByWnd(hDlg);
+		tTbData *pTbData = _vContainer[i]->findToolbarByWnd(hDlg);
 		if (pTbData != NULL)
 		{
 			_vContainer[i]->showToolbar(pTbData, view);
@@ -711,7 +717,7 @@ LRESULT DockingManager::SendNotify(HWND hWnd, UINT message)
 	nmhdr.hwndFrom	= _hParent;
 	nmhdr.idFrom	= ::GetDlgCtrlID(_hParent);
 	::SendMessage(hWnd, WM_NOTIFY, nmhdr.idFrom, (LPARAM)&nmhdr);
-	return ::GetWindowLongPtr(hWnd, DWL_MSGRESULT);
+	return ::GetWindowLongPtr(hWnd, DWLP_MSGRESULT);
 }
 
 void DockingManager::setDockedContSize(int iCont, int iSize)

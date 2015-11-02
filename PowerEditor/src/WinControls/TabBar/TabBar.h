@@ -41,6 +41,10 @@
 #include "resource.h"
 #endif //RESOURCE_H
 
+#include <windows.h>
+#include <commctrl.h>
+#include "Window.h"
+
 //Notification message
 #define TCN_TABDROPPED (TCN_FIRST - 10)
 #define TCN_TABDROPPEDOUTSIDE (TCN_FIRST - 11)
@@ -241,7 +245,7 @@ protected:
 	LRESULT runProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam);
 
 	static LRESULT CALLBACK TabBarPlus_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
-		return (((TabBarPlus *)(::GetWindowLongPtr(hwnd, GWL_USERDATA)))->runProc(hwnd, Message, wParam, lParam));
+		return (((TabBarPlus *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA)))->runProc(hwnd, Message, wParam, lParam));
 	};
 	void exchangeItemData(POINT point);
 

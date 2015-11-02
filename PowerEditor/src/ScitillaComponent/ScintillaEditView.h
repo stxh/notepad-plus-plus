@@ -83,7 +83,7 @@ class NppParameters;
 #define NB_WORD_LIST 4
 #define WORD_LIST_LEN 256
 
-typedef int (* SCINTILLA_FUNC) (void*, int, int, int);
+typedef sptr_t(*SCINTILLA_FUNC) (void *, unsigned int, uptr_t, sptr_t);
 typedef void * SCINTILLA_PTR;
 
 #define WM_DOCK_USERDEFINE_DLG      (SCINTILLA_USER + 1)
@@ -187,7 +187,7 @@ struct SortInPositionOrder {
 	}
 };
 
-typedef vector<ColumnModeInfo> ColumnModeInfos;
+typedef std::vector<ColumnModeInfo> ColumnModeInfos;
 
 struct LanguageName {
 	const TCHAR * lexerName;
@@ -196,6 +196,8 @@ struct LanguageName {
 	LangType LangID;
 	int lexerID;
 };
+
+class ISorter;
 
 class ScintillaEditView : public Window
 {
@@ -236,7 +238,7 @@ public:
 	virtual void init(HINSTANCE hInst, HWND hPere);
 
 	LRESULT execute(UINT Msg, WPARAM wParam=0, LPARAM lParam=0) const {
-		return _pScintillaFunc(_pScintillaPtr, static_cast<int>(Msg), static_cast<int>(wParam), static_cast<int>(lParam));
+		return _pScintillaFunc(_pScintillaPtr, Msg, wParam, lParam);
 	};
 	
 	void activateBuffer(BufferID buffer);
@@ -270,6 +272,7 @@ public:
 	int replaceTargetRegExMode(const TCHAR * re, int fromTargetPos = -1, int toTargetPos = -1) const;
 	void showAutoComletion(int lenEntered, const TCHAR * list);
 	void showCallTip(int startPos, const TCHAR * def);
+	generic_string getLine(int lineNumber);
 	void getLine(int lineNumber, TCHAR * line, int lineBufferLen);
 	void addText(int length, const char *buf);
 
@@ -537,7 +540,7 @@ public:
 	void currentLineUp() const;
 	void currentLineDown() const;
 
-	pair<int, int> getSelectionLinesRange() const;
+	std::pair<int, int> getSelectionLinesRange() const;
     void currentLinesUp() const;
     void currentLinesDown() const;
 
@@ -576,7 +579,7 @@ public:
 	ColumnModeInfos getColumnModeSelectInfo();
 
 	void columnReplace(ColumnModeInfos & cmi, const TCHAR *str);
-	void columnReplace(ColumnModeInfos & cmi, int initial, int incr, UCHAR format);
+	void columnReplace(ColumnModeInfos & cmi, int initial, int incr, int repeat, UCHAR format);
 
 	void foldChanged(int line, int levelNow, int levelPrev);
 	void clearIndicator(int indicatorNumber) {
@@ -636,7 +639,7 @@ public:
 	};
 	void scrollPosToCenter(int pos);
 	generic_string getEOLString();
-	void sortLines(size_t fromLine, size_t toLine, bool isDescending);
+	void sortLines(size_t fromLine, size_t toLine, ISorter *pSort);
 	void changeTextDirection(bool isRTL);
 	bool isTextDirectionRTL() const;
 
@@ -666,8 +669,8 @@ protected:
 	bool _lineNumbersShown;
 	bool _wrapRestoreNeeded;
 
-	typedef std::map<int, Style> StyleMap;
-	typedef std::map<BufferID, StyleMap*> BufferStyleMap;
+	typedef std::unordered_map<int, Style> StyleMap;
+	typedef std::unordered_map<BufferID, StyleMap*> BufferStyleMap;
 	BufferStyleMap _hotspotStyles;
 
 	int _beginSelectPosition;
@@ -910,7 +913,7 @@ protected:
 		}
 	};
 
-    pair<int, int> getWordRange();
+	std::pair<int, int> getWordRange();
 	bool expandWordSelection();
 };
 

@@ -274,15 +274,23 @@ BEGIN
             MENUITEM "Duplicate Current Line",    IDM_EDIT_DUP_LINE
             MENUITEM "Split Lines",               IDM_EDIT_SPLIT_LINES
             MENUITEM "Join Lines",                IDM_EDIT_JOIN_LINES
-            MENUITEM "Sort Lines in Ascending Order",                IDM_EDIT_SORTLINES_ASCENDING
-            MENUITEM "Sort Lines in Descending Order",                IDM_EDIT_SORTLINES_DESCENDING
             MENUITEM "Move Up Current Line",      IDM_EDIT_LINE_UP
             MENUITEM "Move Down Current Line",    IDM_EDIT_LINE_DOWN
 			MENUITEM "Remove Empty Lines",        IDM_EDIT_REMOVEEMPTYLINES
 			MENUITEM "Remove Empty Lines (Containing Blank characters)",    IDM_EDIT_REMOVEEMPTYLINESWITHBLANK
 			MENUITEM "Insert Blank Line Above Current",    IDM_EDIT_BLANKLINEABOVECURRENT
 			MENUITEM "Insert Blank Line Below Current",    IDM_EDIT_BLANKLINEBELOWCURRENT
-        END
+			MENUITEM SEPARATOR
+			MENUITEM "Sort Lines Lexicographically Ascending",		IDM_EDIT_SORTLINES_LEXICOGRAPHIC_ASCENDING
+			MENUITEM "Sort Lines As Integers Ascending",			IDM_EDIT_SORTLINES_INTEGER_ASCENDING
+			MENUITEM "Sort Lines As Decimals (Comma) Ascending",	IDM_EDIT_SORTLINES_DECIMALCOMMA_ASCENDING
+			MENUITEM "Sort Lines As Decimals (Dot) Ascending",		IDM_EDIT_SORTLINES_DECIMALDOT_ASCENDING
+			MENUITEM SEPARATOR
+			MENUITEM "Sort Lines Lexicographically Descending",		IDM_EDIT_SORTLINES_LEXICOGRAPHIC_DESCENDING
+			MENUITEM "Sort Lines As Integers Descending",			IDM_EDIT_SORTLINES_INTEGER_DESCENDING
+			MENUITEM "Sort Lines As Decimals (Comma) Descending",	IDM_EDIT_SORTLINES_DECIMALCOMMA_DESCENDING
+			MENUITEM "Sort Lines As Decimals (Dot) Descending",		IDM_EDIT_SORTLINES_DECIMALDOT_DESCENDING
+		END
         POPUP "Comment/Uncomment"
         BEGIN
             MENUITEM "Toggle Single Line Comment",    IDM_EDIT_BLOCK_COMMENT
@@ -832,13 +840,14 @@ BEGIN
 
     POPUP "&?"
     BEGIN
-        MENUITEM "Help Contents",              IDM_HELP
+        //MENUITEM "Help Contents",              IDM_HELP
         MENUITEM "Command Line Arguments...",      IDM_CMDLINEARGUMENTS
         MENUITEM SEPARATOR
         MENUITEM "Notepad++ Home",            IDM_HOMESWEETHOME
         MENUITEM "Notepad++ Project Page",    IDM_PROJECTPAGE
         //MENUITEM "Online Documentation",      IDM_ONLINEHELP
-        MENUITEM "Forum",                     IDM_FORUM
+        //MENUITEM "Forum",                     IDM_FORUM
+		MENUITEM "Live Support",				IDM_ONLINESUPPORT
         MENUITEM "Get More Plugins",          IDM_PLUGINSHOME
         MENUITEM SEPARATOR
         MENUITEM "Update Notepad++",          IDM_UPDATE_NPP
@@ -876,7 +885,7 @@ BEGIN
     LTEXT           "Author :",IDC_STATIC,21,45,31,8
     LTEXT           "Notepad++ team",IDC_AUTHOR_NAME,78,45,70,8
     LTEXT           "Home Page :",IDC_STATIC,21,59,47,8
-    LTEXT           "http://notepad-plus-plus.org/",IDC_HOME_ADDR,78,59,126,8
+    LTEXT           "https://notepad-plus-plus.org/",IDC_HOME_ADDR,78,59,126,8
     GROUPBOX        "GNU General Public Licence",IDC_STATIC,19,75,231,131,BS_CENTER
     DEFPUSHBUTTON   "OK",IDOK,106,215,50,14,BS_FLAT,WS_EX_STATICEDGE
     // IDC_LICENCE_EDIT should be the last line, don't know why

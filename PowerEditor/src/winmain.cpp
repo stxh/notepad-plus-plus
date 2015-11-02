@@ -25,11 +25,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-
-#include "precompiledHeaders.h"
 #include "Notepad_plus_Window.h"
 #include "Process.h"
-
 #include "Win32Exception.h"	//Win32 exception
 #include "MiniDumper.h"			//Write dump files
 
@@ -315,11 +312,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 	generic_string quotFileName = TEXT("");
     // tell the running instance the FULL path to the new files to load
 	size_t nrFilesToOpen = params.size();
-	const TCHAR * currentFile;
 
 	for(size_t i = 0; i < nrFilesToOpen; ++i)
 	{
-		currentFile = params.at(i);
+		const TCHAR * currentFile = params.at(i);
 		if (currentFile[0])
 		{
 			//check if relative or full path. Relative paths dont have a colon for driveletter
@@ -411,7 +407,10 @@ DEVOMER*/
             doUpdate = false;
     }
 
-	if (TheFirstOne && isUpExist && doUpdate)
+	// wingup doesn't work with the obsolet security layer (API) under xp since downloadings are secured with SSL on notepad_plus_plus.org
+	winVer ver = pNppParameters->getWinVersion();
+	bool isGtXP = ver > WV_XP;
+	if (TheFirstOne && isUpExist && doUpdate && isGtXP)
 	{
 		Process updater(updaterFullPath.c_str(), version.c_str(), updaterDir.c_str());
 		updater.run();
@@ -430,7 +429,6 @@ DEVOMER*/
 
 		// Tell UAC that lower integrity processes are allowed to send WM_COPYDATA messages to this process (or window)
 		// This allows opening new files to already opened elevated Notepad++ process via explorer context menu.
-		winVer ver = pNppParameters->getWinVersion();
 		if (ver >= WV_VISTA || ver == WV_UNKNOWN)
 		{
 			HMODULE hDll = GetModuleHandle(TEXT("user32.dll"));
@@ -494,7 +492,7 @@ DEVOMER*/
 	} catch (const Win32Exception & ex) {
 		TCHAR message[1024];	//TODO: sane number
 		wsprintf(message, TEXT("An exception occured. Notepad++ cannot recover and must be shut down.\r\nThe exception details are as follows:\r\n")
-		TEXT("Code:\t0x%08X\r\nType:\t%S\r\nException address: 0x%08X"), ex.code(), ex.what(), ex.where());
+		TEXT("Code:\t0x%08X\r\nType:\t%S\r\nException address: 0x%08X"), ex.code(), ex.what(), (long)ex.where());
 		::MessageBox(Notepad_plus_Window::gNppHWND, message, TEXT("Win32Exception"), MB_OK | MB_ICONERROR);
 		mdump.writeDump(ex.info());
 		doException(notepad_plus_plus);

@@ -26,11 +26,14 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "precompiledHeaders.h"
+#include <shlwapi.h>
 #include "ScintillaEditView.h"
 #include "Parameters.h"
+#include "Sorters.h"
 #include "TCHAR.h"
+#include <memory>
 
+using namespace std;
 
 // initialize the static variable
 
@@ -254,19 +257,9 @@ void ScintillaEditView::init(HINSTANCE hInst, HWND hPere)
 	
 	_codepage = ::GetACP();
 
-	//Use either Unicode or ANSI setwindowlong, depending on environment
-	if (::IsWindowUnicode(_hSelf))
-	{
-		::SetWindowLongPtrW(_hSelf, GWL_USERDATA, reinterpret_cast<LONG>(this));
-		_callWindowProc = CallWindowProcW;
-		_scintillaDefaultProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(_hSelf, GWL_WNDPROC, reinterpret_cast<LONG>(scintillaStatic_Proc)));
-	}
-	else 
-	{
-		::SetWindowLongPtrA(_hSelf, GWL_USERDATA, reinterpret_cast<LONG>(this));
-		_callWindowProc = CallWindowProcA;
-		_scintillaDefaultProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtrA(_hSelf, GWL_WNDPROC, reinterpret_cast<LONG>(scintillaStatic_Proc)));
-	}
+	::SetWindowLongPtr(_hSelf, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+	_callWindowProc = CallWindowProc;
+	_scintillaDefaultProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtr(_hSelf, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(scintillaStatic_Proc)));
 
 	//Get the startup document and make a buffer for it so it can be accessed like a file
 	attachDefaultDoc();
@@ -274,7 +267,7 @@ void ScintillaEditView::init(HINSTANCE hInst, HWND hPere)
 
 LRESULT CALLBACK ScintillaEditView::scintillaStatic_Proc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	ScintillaEditView *pScint = (ScintillaEditView *)(::GetWindowLongPtr(hwnd, GWL_USERDATA));
+	ScintillaEditView *pScint = (ScintillaEditView *)(::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
 	if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
 	{			
@@ -292,7 +285,7 @@ LRESULT CALLBACK ScintillaEditView::scintillaStatic_Proc(HWND hwnd, UINT Message
 		if (isSynpnatic || makeTouchPadCompetible)
 			return (pScint->scintillaNew_Proc(hwnd, Message, wParam, lParam));
 
-		ScintillaEditView *pScintillaOnMouse = (ScintillaEditView *)(::GetWindowLongPtr(hwndOnMouse, GWL_USERDATA));
+		ScintillaEditView *pScintillaOnMouse = (ScintillaEditView *)(::GetWindowLongPtr(hwndOnMouse, GWLP_USERDATA));
 		if (pScintillaOnMouse != pScint)
 			return ::SendMessage(hwndOnMouse, Message, wParam, lParam);
 	}
@@ -448,7 +441,7 @@ void ScintillaEditView::setSpecialStyle(const Style & styleToSet)
     if (styleToSet._fontName && lstrcmp(styleToSet._fontName, TEXT("")) != 0)
 	{
 		WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
-		const char * fontNameA = wmc->wchar2char(styleToSet._fontName, CP_ACP);
+		const char * fontNameA = wmc->wchar2char(styleToSet._fontName, CP_UTF8);
 		execute(SCI_STYLESETFONT, (WPARAM)styleID, (LPARAM)fontNameA);
 	}
 	int fontStyle = styleToSet._fontStyle;
@@ -1911,11 +1904,22 @@ void ScintillaEditView::showCallTip(int startPos, const TCHAR * def)
 	execute(SCI_CALLTIPSHOW, startPos, LPARAM(defA));
 }
 
+generic_string ScintillaEditView::getLine(int lineNumber)
+{
+	int lineLen = execute(SCI_LINELENGTH, lineNumber);
+	const int bufSize = lineLen + 1;
+	std::unique_ptr<TCHAR[]> buf = std::make_unique<TCHAR[]>(bufSize);
+	getLine(lineNumber, buf.get(), bufSize);
+	return buf.get();
+}
+
 void ScintillaEditView::getLine(int lineNumber, TCHAR * line, int lineBufferLen)
 {
 	WcharMbcsConvertor *wmc = WcharMbcsConvertor::getInstance();
 	unsigned int cp = execute(SCI_GETCODEPAGE);
 	char *lineA = new char[lineBufferLen];
+	// From Scintilla documentation for SCI_GETLINE: "The buffer is not terminated by a 0 character."
+	memset(lineA, '\0', sizeof(char) * lineBufferLen);
 	execute(SCI_GETLINE, lineNumber, (LPARAM)lineA);
 	const TCHAR *lineW = wmc->char2wchar(lineA, cp);
 	lstrcpyn(line, lineW, lineBufferLen);
@@ -2374,9 +2378,9 @@ void ScintillaEditView::convertSelectedTextTo(bool Case)
 			for (int j = 0 ; j < nbChar ; ++j)
 			{
 				if (Case == UPPERCASE)
-					destStr[j] = (wchar_t)::CharUpperW((LPWSTR)destStr[j]);
+					destStr[j] = (wchar_t)(UINT_PTR)::CharUpperW((LPWSTR)destStr[j]);
 				else
-					destStr[j] = (wchar_t)::CharLowerW((LPWSTR)destStr[j]);
+					destStr[j] = (wchar_t)(UINT_PTR)::CharLowerW((LPWSTR)destStr[j]);
 			}
 			::WideCharToMultiByte(codepage, 0, destStr, len, srcStr, len, NULL, NULL);
 
@@ -2414,9 +2418,9 @@ void ScintillaEditView::convertSelectedTextTo(bool Case)
 		for (int i = 0 ; i < nbChar ; ++i)
 		{
 			if (Case == UPPERCASE)
-				selectedStrW[i] = (WCHAR)::CharUpperW((LPWSTR)selectedStrW[i]);
+				selectedStrW[i] = (WCHAR)(UINT_PTR)::CharUpperW((LPWSTR)selectedStrW[i]);
 			else
-				selectedStrW[i] = (WCHAR)::CharLowerW((LPWSTR)selectedStrW[i]);
+				selectedStrW[i] = (WCHAR)(UINT_PTR)::CharLowerW((LPWSTR)selectedStrW[i]);
 		}
 		::WideCharToMultiByte(codepage, 0, selectedStrW, strWSize, selectedStr, strSize, NULL, NULL);
 
@@ -2587,8 +2591,10 @@ void ScintillaEditView::columnReplace(ColumnModeInfos & cmi, const TCHAR *str)
 	}
 }
 
-void ScintillaEditView::columnReplace(ColumnModeInfos & cmi, int initial, int incr, UCHAR format)
+void ScintillaEditView::columnReplace(ColumnModeInfos & cmi, int initial, int incr, int repeat, UCHAR format)
 {
+	assert(repeat > 0);
+
 	// 0000 00 00 : Dec BASE_10
 	// 0000 00 01 : Hex BASE_16
 	// 0000 00 10 : Oct BASE_08
@@ -2611,28 +2617,49 @@ void ScintillaEditView::columnReplace(ColumnModeInfos & cmi, int initial, int in
 	else if (f == BASE_02)
 		base = 2;
 
-	int endNumber = initial + incr * (cmi.size() - 1);
-	int nbEnd = getNbDigits(endNumber, base);
-	int nbInit = getNbDigits(initial, base);
-	int nb = max(nbInit, nbEnd);
-
 	const int stringSize = 512;
 	TCHAR str[stringSize];
 
+	// Compute the numbers to be placed at each column.
+	std::vector<int> numbers;
+	{
+		int curNumber = initial;
+		const unsigned int kiMaxSize = cmi.size();
+		while(numbers.size() < kiMaxSize)
+		{
+			for(int i = 0; i < repeat; i++)
+			{
+				numbers.push_back(curNumber);
+				if (numbers.size() >= kiMaxSize)
+				{
+					break;
+				}
+			}
+			curNumber += incr;
+		}
+	}
+
+	assert(numbers.size()> 0);
+
+	const int kibEnd = getNbDigits(*numbers.rbegin(), base);
+	const int kibInit = getNbDigits(initial, base);
+	const int kib = std::max<int>(kibInit, kibEnd);
+
 	int totalDiff = 0;
-	for (size_t i = 0, len = cmi.size() ; i < len ; ++i)
+	const size_t len = cmi.size();
+	for (size_t i = 0 ; i < len ; i++)
 	{
 		if (cmi[i].isValid())
 		{
-			int len2beReplace = cmi[i]._selRpos - cmi[i]._selLpos;
-			int diff = nb - len2beReplace;
+			const int len2beReplaced = cmi[i]._selRpos - cmi[i]._selLpos;
+			const int diff = kib - len2beReplaced;
 
 			cmi[i]._selLpos += totalDiff;
 			cmi[i]._selRpos += totalDiff;
 
-			int2str(str, stringSize, initial, base, nb, isZeroLeading);
+			int2str(str, stringSize, numbers.at(i), base, kib, isZeroLeading);
 
-			bool hasVirtualSpc = cmi[i]._nbVirtualAnchorSpc > 0;
+			const bool hasVirtualSpc = cmi[i]._nbVirtualAnchorSpc > 0;
 			if (hasVirtualSpc) // if virtual space is present, then insert space
 			{
 				for (int j = 0, k = cmi[i]._selLpos; j < cmi[i]._nbVirtualCaretSpc ; ++j, ++k)
@@ -2650,7 +2677,6 @@ void ScintillaEditView::columnReplace(ColumnModeInfos & cmi, int initial, int in
 			const char *strA = wmc->wchar2char(str, cp);
 			execute(SCI_REPLACETARGET, (WPARAM)-1, (LPARAM)strA);
 
-			initial += incr;
 			if (hasVirtualSpc) 
 			{
 				totalDiff += cmi[i]._nbVirtualAnchorSpc + lstrlen(str);
@@ -2947,7 +2973,7 @@ void ScintillaEditView::insertNewLineBelowCurrentLine()
 	execute(SCI_SETEMPTYSELECTION, execute(SCI_POSITIONFROMLINE, current_line + 1));
 }
 
-void ScintillaEditView::sortLines(size_t fromLine, size_t toLine, bool isDescending)
+void ScintillaEditView::sortLines(size_t fromLine, size_t toLine, ISorter *pSort)
 {
 	if (fromLine >= toLine)
 	{
@@ -2968,23 +2994,16 @@ void ScintillaEditView::sortLines(size_t fromLine, size_t toLine, bool isDescend
 		}
 	}
 	assert(toLine - fromLine + 1 == splitText.size());
-	const bool isNumericSort = allLinesAreNumericOrEmpty(splitText);
-	std::vector<generic_string> sortedText;
-	if (isNumericSort)
-	{
-		sortedText = numericSort(splitText, isDescending);
-	}
-	else
-	{
-		sortedText = lexicographicSort(splitText, isDescending);
-	}
+	const std::vector<generic_string> sortedText = pSort->sort(splitText);
 	const generic_string joined = stringJoin(sortedText, getEOLString());
 	if (sortEntireDocument)
 	{
+		assert(joined.length() == text.length());
 		replaceTarget(joined.c_str(), startPos, endPos);
 	}
 	else
 	{
+		assert(joined.length() + getEOLString().length() == text.length());
 		replaceTarget((joined + getEOLString()).c_str(), startPos, endPos);
 	}
 }

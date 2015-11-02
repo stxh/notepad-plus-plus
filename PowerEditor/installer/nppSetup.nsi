@@ -36,10 +36,10 @@
 ; Define the application name
 !define APPNAME "Notepad++"
 
-!define APPVERSION "6.7.8"
+!define APPVERSION "6.8"
 !define APPNAMEANDVERSION "${APPNAME} v${APPVERSION}"
 !define VERSION_MAJOR 6
-!define VERSION_MINOR 78
+!define VERSION_MINOR 8
 
 !define APPWEBSITE "http://notepad-plus-plus.org/"
 
@@ -489,6 +489,7 @@ Section -"Notepad++" mainSection
 
 	SetOverwrite off
 	File "..\bin\shortcuts.xml"
+	File "..\bin\SourceCodePro-Regular.otf"
 	
 	; Set Section Files and Shortcuts
 	SetOverwrite on
@@ -619,6 +620,17 @@ Section -"Notepad++" mainSection
 		Rename "$INSTDIR\plugins\AutoSaveU.dll" "$INSTDIR\plugins\disabled\AutoSaveU.dll"
 		Delete "$INSTDIR\plugins\AutoSaveU.dll"
 		
+	IfFileExists "$INSTDIR\plugins\NppQCP.dll" 0 +4
+		MessageBox MB_OK "Due to the stability issue,$\nNppQCP.dll will be moved to the directory $\"disabled$\"" /SD IDOK
+		Rename "$INSTDIR\plugins\NppQCP.dll" "$INSTDIR\plugins\disabled\NppQCP.dll"
+		Delete "$INSTDIR\plugins\NppQCP.dll"
+		
+	IfFileExists "$INSTDIR\plugins\DSpellCheck.dll" 0 +4
+		MessageBox MB_OK "Due to the stability issue,$\nDSpellCheck.dll will be moved to the directory $\"disabled$\"" /SD IDOK
+		Rename "$INSTDIR\plugins\DSpellCheck.dll" "$INSTDIR\plugins\disabled\DSpellCheck.dll"
+		Delete "$INSTDIR\plugins\DSpellCheck.dll"
+	
+	
     ; Context Menu Management : removing old version of Context Menu module
 	IfFileExists "$INSTDIR\nppcm.dll" 0 +3
 		Exec 'regsvr32 /u /s "$INSTDIR\nppcm.dll"'
@@ -791,21 +803,6 @@ SectionGroupEnd
 
 SectionGroup "Plugins" Plugins
 	SetOverwrite on
-
-	${MementoSection} "Spell-Checker" DSpellCheck
-		Delete "$INSTDIR\plugins\DSpellCheck.dll"
-		SetOutPath "$INSTDIR\plugins"
-		File "..\bin\plugins\DSpellCheck.dll"
-		SetOutPath "$UPDATE_PATH\plugins\Config"
-		SetOutPath "$INSTDIR\plugins\Config\Hunspell"
-		File "..\bin\plugins\Config\Hunspell\dictionary.lst"
-		File "..\bin\plugins\Config\Hunspell\en_GB.aff"
-		File "..\bin\plugins\Config\Hunspell\en_GB.dic"
-		File "..\bin\plugins\Config\Hunspell\README_en_GB.txt"
-		File "..\bin\plugins\Config\Hunspell\en_US.aff"
-		File "..\bin\plugins\Config\Hunspell\en_US.dic"
-		File "..\bin\plugins\Config\Hunspell\README_en_US.txt"
-	${MementoSectionEnd}
 
 	${MementoSection} "Npp FTP" NppFTP
 		Delete "$INSTDIR\plugins\NppFTP.dll"
@@ -1065,6 +1062,9 @@ SectionGroup "Localization" localization
 	${MementoSectionEnd}
 	${MementoUnselectedSection} "Tamil" tamil
 		CopyFiles "$TEMP\nppLocalization\tamil.xml" "$INSTDIR\localization\tamil.xml"
+	${MementoSectionEnd}
+	${MementoUnselectedSection} "Tatar" tatar
+		CopyFiles "$TEMP\nppLocalization\tatar.xml" "$INSTDIR\localization\tatar.xml"
 	${MementoSectionEnd}
 	${MementoUnselectedSection} "Telugu" telugu
 		CopyFiles "$TEMP\nppLocalization\telugu.xml" "$INSTDIR\localization\telugu.xml"
@@ -1786,6 +1786,9 @@ SectionGroup un.localization
 	Section un.tamil
 		Delete "$INSTDIR\localization\tamil.xml"
 	SectionEnd
+	Section un.tatar
+		Delete "$INSTDIR\localization\tatar.xml"
+	SectionEnd
 	Section un.telugu
 		Delete "$INSTDIR\localization\telugu.xml"
 	SectionEnd
@@ -1958,6 +1961,7 @@ Section Uninstall
 	Delete "$INSTDIR\nativeLang.xml"
 	Delete "$INSTDIR\session.xml"
 	Delete "$INSTDIR\localization\english.xml"
+	Delete "$INSTDIR\SourceCodePro-Regular.otf"
 	
 	SetShellVarContext current
 	Delete "$APPDATA\Notepad++\langs.xml"
