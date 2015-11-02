@@ -47,8 +47,7 @@ copy /Y ..\bin\"notepad++.exe" .\minimalist\
 If ErrorLevel 1 PAUSE
 copy /Y ..\bin\SciLexer.dll .\minimalist\
 If ErrorLevel 1 PAUSE
-copy /Y ..\src\fonts\sourceCodePro\SourceCodePro-Regular.otf .\minimalist\
-If ErrorLevel 1 PAUSE
+
 
 
 rem Notepad++ Unicode package
@@ -61,7 +60,6 @@ mkdir .\zipped.package.release\themes
 mkdir .\zipped.package.release\plugins
 mkdir .\zipped.package.release\plugins\APIs
 mkdir .\zipped.package.release\plugins\Config
-mkdir .\zipped.package.release\plugins\Config\Hunspell
 mkdir .\zipped.package.release\plugins\doc
 
 
@@ -89,12 +87,9 @@ copy /Y ..\bin\"notepad++.exe" .\zipped.package.release\
 If ErrorLevel 1 PAUSE
 copy /Y ..\bin\SciLexer.dll .\zipped.package.release\
 If ErrorLevel 1 PAUSE
-copy /Y ..\src\fonts\sourceCodePro\SourceCodePro-Regular.otf .\zipped.package.release\
-If ErrorLevel 1 PAUSE
+
 
 rem Plugins
-copy /Y "..\bin\plugins\NppFTP.dll" .\zipped.package.release\plugins\
-If ErrorLevel 1 PAUSE
 copy /Y "..\bin\plugins\NppExport.dll" .\zipped.package.release\plugins\
 If ErrorLevel 1 PAUSE
 copy /Y "..\bin\plugins\mimeTools.dll" .\zipped.package.release\plugins\
@@ -130,8 +125,7 @@ If ErrorLevel 1 PAUSE
 If ErrorLevel 1 PAUSE
 "C:\Program Files\7-Zip\7z.exe" a -r .\build\npp.bin.7z .\zipped.package.release\*
 If ErrorLevel 1 PAUSE
-"C:\Program Files (x86)\NSIS\Unicode\makensis.exe" nppSetup.nsi
-rem "C:\Program Files\NSIS\Unicode\makensis.exe" nppSetup.nsi
+IF EXIST "%PROGRAMFILES(X86)%" ("%PROGRAMFILES(x86)%\NSIS\Unicode\makensis.exe" nppSetup.nsi) ELSE ("%PROGRAMFILES%\NSIS\Unicode\makensis.exe" nppSetup.nsi)
 
 
 @echo off

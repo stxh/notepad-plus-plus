@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
 Catalan translation
-for Notepad++ 6.7.1
-Updated 23.12.2014
+for Notepad++ 6.8.2
+Updated 20.10.2015
 By Hiro5 <groccat at gmail>
 -->
 <NotepadPlus>
-	<Native-Langue name="Català" filename="catalan.xml" version="6.7.1">
+	<Native-Langue name="Català" filename="catalan.xml" version="6.8.2">
 		<Menu>
 			<Main>
 				<Entries>
@@ -87,6 +87,7 @@ By Hiro5 <groccat at gmail>
 					<Item id="41013" name="Desa &amp;Sessió..."/>
 					<Item id="41010" name="&amp;Imprimeix..."/>
 					<Item id="1001"  name="Im&amp;primeix ara!"/>
+					<Item id="41021" name="Restaura el darrer fitxer tancat"/>
 					<Item id="42040" name="Obre tots els ar&amp;xius recents"/>
 					<Item id="42041" name="Nete&amp;ja llista d'arxius recents"/>
 					<Item id="41011" name="S&amp;urt"/>
@@ -109,7 +110,13 @@ By Hiro5 <groccat at gmail>
 					<Item id="42012" name="&amp;Talla línies"/>
 					<Item id="42013" name="&amp;Uneix línies"/>
 					<Item id="42059" name="Ordena línies ascendentment"/>
+					<Item id="42061" name="Ordena línies d'enters ascendentment"/>
+					<Item id="42063" name="Ordena línies de decimals amb coma ascendentment"/>
+					<Item id="42065" name="Ordena línies de decimals amb punt ascendentment"/>
 					<Item id="42060" name="Ordena línies descendentment"/>
+					<Item id="42062" name="Ordena línies d'enters descendentment"/>
+					<Item id="42064" name="Ordena línies de decimals amb coma descendentment"/>
+					<Item id="42066" name="Ordena línies de decimals amb punt descendentment"/>
 					<Item id="42014" name="Mou a&amp;munt aquesta línia"/>
 					<Item id="42015" name="Mou a&amp;vall aquesta línia"/>
 					<Item id="42055" name="&amp;Esborra línies buides"/>
@@ -247,10 +254,10 @@ By Hiro5 <groccat at gmail>
 					<Item id="44013" name="Amaga el marge de marca de línia"/>
 					<Item id="44014" name="Amaga el marge d'agrupació"/>
 					<Item id="45004" name="Codifica com A&amp;NSI"/>
-					<Item id="45008" name="Codifica com UTF-8 s&amp;ense BOM"/>
-					<Item id="45005" name="Codifica com U&amp;TF-8"/>
-					<Item id="45006" name="Cod&amp;ifica com UCS-2 Big Endian"/>
-					<Item id="45007" name="Co&amp;difica com UCS-2 Little Endian"/>
+					<Item id="45008" name="Codifica com UT&amp;F-8"/>
+					<Item id="45005" name="Codifica com UTF-&amp;8 amb BOM"/>
+					<Item id="45006" name="Cod&amp;ifica com UCS-2 Big Endian amb BOM"/>
+					<Item id="45007" name="Co&amp;difica com UCS-2 Little Endian amb BOM"/>
 					<Item id="45060" name="Big5 (Tradicional)"/>
 					<Item id="45061" name="GB2312 (Simplificat)"/>
 					<Item id="45054" name="OEM 861: Islandès"/>
@@ -259,10 +266,10 @@ By Hiro5 <groccat at gmail>
 					<Item id="45053" name="OEM 860: Portuguès"/>
 					<Item id="45056" name="OEM 863: Francès"/>
 					<Item id="45009" name="Converteix a &amp;ANSI"/>
-					<Item id="45010" name="Converteix a UTF-8 &amp;sense BOM"/>
-					<Item id="45011" name="Converteix a &amp;UTF-8"/>
-					<Item id="45012" name="Converteix a UCS-2 &amp;Big Endian"/>
-					<Item id="45013" name="Converteix a UCS-2 &amp;Little Endian"/>
+					<Item id="45010" name="Converteix a &amp;UTF-8"/>
+					<Item id="45011" name="Converteix a U&amp;TF-8 amb BOM"/>
+					<Item id="45012" name="Converteix a UCS-2 &amp;Big Endian amb BOM"/>
+					<Item id="45013" name="Converteix a UCS-2 &amp;Little Endian amb BOM"/>
 					<Item id="46033" name="Assemblador"/>
 					<Item id="46019" name="MS INI (arxiu)"/>
 					<Item id="46015" name="MS-DOS (estil)"/>
@@ -284,12 +291,11 @@ By Hiro5 <groccat at gmail>
 					<Item id="48016" name="&amp;Modifica tecla de drecera/Esborra macro..."/>
 					<Item id="49000" name="&amp;Executa..."/>
 					<Item id="48017" name="&amp;Modifica tecla de drecera/Esborra ordre..."/>
-					<Item id="47008" name="&amp;Ajuda..."/>
 					<Item id="47010" name="Ús en &amp;línia d'ordres..."/>
 					<Item id="47001" name="Web de &amp;Notepad++"/>
 					<Item id="47002" name="Pàgina del &amp;projecte Notepad++"/>
-					<Item id="47003" name="Np&amp;Wiki++ (Ajuda en línia)"/>
-					<Item id="47004" name="&amp;Fòrum"/>
+					<Item id="47004" name="&amp;Fòrum de Notepad++"/>
+					<Item id="47011" name="&amp;Suport en línia"/>
 					<Item id="47005" name="Aconsegueix més &amp;complements"/>
 					<Item id="47006" name="Ac&amp;tualitza Notepad++"/>
 					<Item id="47009" name="Confi&amp;gura l'intermediari d'actualització"/>
@@ -353,7 +359,7 @@ By Hiro5 <groccat at gmail>
 				<Item id="1606" name="Dóna la volta"/>
 				<Item id="1624" name="Mode de cerca"/>
 				<Item id="1625" name="Normal"/>
-				<Item id="1626" name="Estès (\n, \r, \t, \0, \x...)"/>
+				<Item id="1626" name="Estès (\n, \r, \t, \x..., \0)"/>
 				<Item id="1605" name="Expressió regular"/>
 				<Item id="1703" name="&amp;. cerca nova línia"/>
 				<Item id="1621" name="Direcció"/>
@@ -644,8 +650,8 @@ By Hiro5 <groccat at gmail>
 					<Item id="6206" name="Mostra el número de línia al marge"/>
 					<Item id="6207" name="Mostra les marques de línia al marge"/>
 					<Item id="6214" name="Activa el realçament de la línia actual"/>
-					<Item id="6234" name="Desactiva el desplaçament avançat
-(si teniu problemes amb un touchpad)"/>
+					<Item id="6215" name="Activa suavitzat de lletra"/>
+					<Item id="6234" name="Desactiva el desplaçament avançat&#xD;(si teniu problemes amb un touchpad)"/>
 				</Scintillas>
 				<NewDoc title="Document nou">
 					<Item id="6419" name="Document nou"/>
@@ -655,11 +661,11 @@ By Hiro5 <groccat at gmail>
 					<Item id="6404" name="Mac"/>
 					<Item id="6405" name="Codificació"/>
 					<Item id="6406" name="ANSI"/>
-					<Item id="6407" name="UTF-8 sense BOM"/>
+					<Item id="6407" name="UTF-8"/>
 					<Item id="6420" name="Aplica als fitxers ANSI oberts"/>
-					<Item id="6408" name="UTF-8"/>
-					<Item id="6409" name="UCS2 Big Endian"/>
-					<Item id="6410" name="UCS2 Little Endian"/>
+					<Item id="6408" name="UTF-8 amb BOM"/>
+					<Item id="6409" name="UCS2 Big Endian amb BOM"/>
+					<Item id="6410" name="UCS2 Little Endian amb BOM"/>
 					<Item id="6411" name="Llenguatge inicial:"/>
 				</NewDoc>
 				<DefaultDir title="Directoris">
@@ -770,10 +776,8 @@ By Hiro5 <groccat at gmail>
 				<Cloud title="Núvol">
 					<Item id="6262" name="Paràmetres al núvol"/>
 					<Item id="6263" name="Sense núvol"/>
-					<Item id="6264" name="Dropbox"/>
-					<Item id="6265" name="OneDrive"/>
-					<Item id="6266" name="Google Drive"/>
-					<!--Item id="6261" name="Reinicieu Notepad++ perquè faci efecte."-->
+					<Item id="6267" name="Indiqueu el directori del núvol aquí:"/>
+					<!-- <Item id="6261" name="Reinicieu Notepad++ perquè faci efecte."/> -->
 				</Cloud>
 				<MISC title="Miscel·lània">
 					<Item id="6324" name="Canvi de document (Ctrl+Tab)"/>
@@ -826,6 +830,7 @@ By Hiro5 <groccat at gmail>
 				<Item id="2033" name="Números a inserir"/>
 				<Item id="2030" name="Número inicial:"/>
 				<Item id="2031" name="Incrementat en:"/>
+				<Item id="2036" name="Repeteix:"/>
 				<Item id="2035" name="Omple amb zeros"/>
 				<Item id="2032" name="Format"/>
 				<Item id="2024" name="Decimal"/>
@@ -835,28 +840,18 @@ By Hiro5 <groccat at gmail>
 			</ColumnEditor>
 		</Dialog>
 		<MessageBox>
-			<ContextMenuXmlEditWarning title="Editant contextMenu" message="Podeu modificar el menú contextual emergent de Notepad++ editant el fitxer contextMenu.xml.
-Necessiteu reiniciar Notepad++ després de modificar contextMenu.xml per a què faci efecte."/>
-			<NppHelpAbsentWarning title="No existeix el fitxer" message="
-no existeix. El podeu baixar de la web de Notepad++."/>
-			<SaveCurrentModifWarning title="Desa la modificació actual" message="Hauríeu de desar la modificació actual.
-Totes les modificacions desades no es podran desfer.
-
-Voleu continuar?"/>
-			<LoseUndoAbilityWarning title="Avís de pèrdua d'habilitat de desfer" message="Hauríeu de desar la modificació actual.
-Totes les modificacions desades no es podran desfer.
-
-Voleu continuar?"/>
+			<ContextMenuXmlEditWarning title="Editant contextMenu" message="Podeu modificar el menú contextual emergent de Notepad++ editant el fitxer contextMenu.xml.&#xD;Reinicieu Notepad++ després de modificar contextMenu.xml perquè faci efecte."/>
+			<NppHelpAbsentWarning title="No existeix el fitxer" message="&#xD;no existeix. El podeu baixar de la web de Notepad++."/>
+			<SaveCurrentModifWarning title="Desa la modificació actual" message="Hauríeu de desar la modificació actual.&#xD;Totes les modificacions desades no es podran desfer.&#xD;&#xD;Voleu continuar?"/>
+			<LoseUndoAbilityWarning title="Avís de pèrdua d'habilitat de desfer" message="Hauríeu de desar la modificació actual.&#xD;Totes les modificacions desades no es podran desfer.&#xD;&#xD;Voleu continuar?"/>
 			<CannotMoveDoc title="Mou a una nova finestra de Notepad++" message="El document s'ha modificat, l'heu de desar abans i tornar a intentar-ho."/>
 			<DocReloadWarning title="Recarrega" message="Segur que voleu recarregar el fitxer actual i perdre els canvis fets amb Notepad++?"/>
 			<FileLockedWarning title="No s'ha pogut desar" message="Comproveu si aquest fitxer està obert amb un altre programa"/>
 			<FileAlreadyOpenedInNpp title="" message="El fitxer ja està obert amb Notepad++."/>
 			<DeleteFileFailed title="Esborra fitxer" message="No s'ha pogut esborrar el fitxer"/>
-			<NbFileToOpenImportantWarning title="La quantitat d'arxius a obrir és massa gran" message="Esteu a punt d'obrir $INT_REPLACE$ fitxers.
-Segur que voleu obrir-los?"/>
-			<ColumnModeTip title="Consell del mode de columna" message="Utilitzeu «Alt+Selecció amb ratolí»
-o «Alt+Maj.+Fletxes del teclat»
-per canviar al mode de columna." />
+			<NbFileToOpenImportantWarning title="La quantitat d'arxius a obrir és massa gran" message="Esteu a punt d'obrir $INT_REPLACE$ fitxers.&#xD;Segur que voleu obrir-los?"/>
+			<ColumnModeTip title="Consell del mode de columna" message="Utilitzeu «Alt+Selecció amb ratolí»&#xD;o «Alt+Maj.+Fletxes del teclat»&#xD;per canviar al mode de columna." />
+			<SettingsOnCloudError title="Opcions al núvol" message="Sembla que el directori indicat a les opcions del núvol es troba en una unitat de només lectura,&#xD;o en una carpeta que demana drets d'accés d'escriptura.&#xD;Els vostres paràmetres del núvol es cancel·laran. Reinicieu a un valor coherent a través del diàleg de Preferències."/>
 		</MessageBox>
 		<ClipboardHistory>
 			<PanelTitle name="Historial del porta-retalls"/>
