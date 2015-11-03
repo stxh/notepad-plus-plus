@@ -119,6 +119,9 @@ IDI_READONLY_ICON               ICON      "icons\\readonly.ico"
 IDI_DELETE_ICON                 ICON      "icons\\delete.ico"
 
 IDI_FIND_RESULT_ICON            ICON      "icons\\findResult.ico"
+IDI_FIND_IN_FILES_OFF_ICON  ICON                    "icons\\find_in_files_off.ico"
+IDI_FIND_IN_FILES_ON_ICON   ICON                    "icons\\find_in_files_on.ico"
+
 
 IDC_DRAG_TAB                    CURSOR    "cursors\\drag.cur"
 IDC_DRAG_INTERDIT_TAB           CURSOR    "cursors\\drag_interdit.cur"
@@ -158,6 +161,8 @@ IDR_CLOSETAB_HOVER              BITMAP    "icons\\closeTabButton_hover.bmp"
 IDR_CLOSETAB_PUSH               BITMAP    "icons\\closeTabButton_push.bmp"
 IDR_DOCMAP                      BITMAP    "icons\\docMap.bmp"
 IDR_FUNC_LIST                   BITMAP    "icons\\functionList.bmp"
+IDR_FIND_IN_FILES								BITMAP    "icons\\findInFiles.bmp"
+
 IDR_DOCMAP_ICO                  ICON      "icons\\docMap.ico"
 IDR_FUNC_LIST_ICO               ICON      "icons\\functionList.ico"
 IDR_PROJECTPANEL_ICO            ICON      "icons\\projectPanel.ico"

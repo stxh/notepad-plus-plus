@@ -1532,6 +1532,9 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lPa
 					MainFileManager->backupCurrentBuffer();
 				}
 
+				// saving npp
+				saveNppFile();
+
 				Session currentSession;
 				if (nppgui._rememberLastSession)
 				{

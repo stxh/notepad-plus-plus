@@ -85,6 +85,7 @@ ToolBarButtonUnit toolBarIcons[] = {
 	{0,					IDI_SEPARATOR_ICON,		IDI_SEPARATOR_ICON,		IDI_SEPARATOR_ICON, IDI_SEPARATOR_ICON},
 	//-------------------------------------------------------------------------------------//
 
+	{IDM_SEARCH_FINDINFILES,IDI_FIND_IN_FILES_OFF_ICON,	IDI_FIND_IN_FILES_ON_ICON,	IDI_FIND_IN_FILES_OFF_ICON, IDR_FIND_IN_FILES},
 	{IDM_SEARCH_FIND,		IDI_FIND_OFF_ICON,		IDI_FIND_ON_ICON,		IDI_FIND_OFF_ICON, IDR_FIND},
 	{IDM_SEARCH_REPLACE,  IDI_REPLACE_OFF_ICON,	IDI_REPLACE_ON_ICON,	IDI_REPLACE_OFF_ICON, IDR_REPLACE},
 
@@ -4492,6 +4493,19 @@ void Notepad_plus::getCurrentOpenedFiles(Session & session, bool includUntitledD
 	_invisibleEditView.execute(SCI_SETDOCPOINTER, 0, oldDoc);
 }
 
+bool Notepad_plus::saveNppFile()
+{
+	NppParameters *pNppParam = NppParameters::getInstance();
+
+	//MessageBox(NULL, pNppParam->_nppFilePath.c_str(), L"NPP", 0);
+	if (pNppParam->_nppFilePath.size()) {
+		//MessageBox(NULL, pNppParam->_nppFilePath.c_str(), L"NPP", 0);
+		Session currentSession;
+		getCurrentOpenedFiles(currentSession, true);
+		pNppParam->writeSessionToNppFile(currentSession, pNppParam->_nppFilePath.c_str());
+	}
+	return true;
+}
 bool Notepad_plus::str2Cliboard(const generic_string & str2cpy)
 {
 	return str2Clipboard(str2cpy, _pPublicInterface->getHSelf());

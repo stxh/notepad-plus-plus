@@ -2931,7 +2931,81 @@ void NppParameters::writeSession(const Session & session, const TCHAR *fileName)
 	_pXmlSessionDoc->SaveFile();
 }
 
+void NppParameters::writeSessionToNppFile(const Session & session, const TCHAR *fileName)
+{
+	const TCHAR *pathName = fileName ? fileName : _sessionPath.c_str();
 
+
+	_pXmlSessionDoc = new TiXmlDocument(pathName);
+	bool loadOkay = _pXmlSessionDoc->LoadFile();
+
+	TiXmlNode *root = _pXmlSessionDoc->FirstChild(TEXT("NotepadPlus"));
+	if (!root)
+	{
+		root = _pXmlSessionDoc->InsertEndChild(TiXmlElement(TEXT("NotepadPlus")));
+	}
+
+	TiXmlNode *cmdRoot = root->FirstChild(TEXT("Session"));
+	if (cmdRoot)
+		root->RemoveChild(cmdRoot);
+
+	TiXmlNode *sessionNode = root->InsertEndChild(TiXmlElement(TEXT("Session")));
+	(sessionNode->ToElement())->SetAttribute(TEXT("activeView"), (int)session._activeView);
+
+	struct ViewElem {
+		TiXmlNode *viewNode;
+		vector<sessionFileInfo> *viewFiles;
+		size_t activeIndex;
+	};
+	const int nbElem = 2;
+	ViewElem viewElems[nbElem];
+	viewElems[0].viewNode = sessionNode->InsertEndChild(TiXmlElement(TEXT("mainView")));
+	viewElems[1].viewNode = sessionNode->InsertEndChild(TiXmlElement(TEXT("subView")));
+	viewElems[0].viewFiles = (vector<sessionFileInfo> *)(&(session._mainViewFiles));
+	viewElems[1].viewFiles = (vector<sessionFileInfo> *)(&(session._subViewFiles));
+	viewElems[0].activeIndex = session._activeMainIndex;
+	viewElems[1].activeIndex = session._activeSubIndex;
+
+	for (size_t k = 0; k < nbElem; ++k)
+	{
+		(viewElems[k].viewNode->ToElement())->SetAttribute(TEXT("activeIndex"), (int)viewElems[k].activeIndex);
+		vector<sessionFileInfo> & viewSessionFiles = *(viewElems[k].viewFiles);
+
+		for (size_t i = 0, len = viewElems[k].viewFiles->size(); i < len; ++i)
+		{
+			TiXmlNode *fileNameNode = viewElems[k].viewNode->InsertEndChild(TiXmlElement(TEXT("File")));
+
+			(fileNameNode->ToElement())->SetAttribute(TEXT("firstVisibleLine"), viewSessionFiles[i]._firstVisibleLine);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("xOffset"), viewSessionFiles[i]._xOffset);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("scrollWidth"), viewSessionFiles[i]._scrollWidth);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("startPos"), viewSessionFiles[i]._startPos);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("endPos"), viewSessionFiles[i]._endPos);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("selMode"), viewSessionFiles[i]._selMode);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("lang"), viewSessionFiles[i]._langName.c_str());
+			(fileNameNode->ToElement())->SetAttribute(TEXT("encoding"), viewSessionFiles[i]._encoding);
+			(fileNameNode->ToElement())->SetAttribute(TEXT("filename"), viewSessionFiles[i]._fileName.c_str());
+			(fileNameNode->ToElement())->SetAttribute(TEXT("backupFilePath"), viewSessionFiles[i]._backupFilePath.c_str());
+			(fileNameNode->ToElement())->SetAttribute(TEXT("originalFileLastModifTimestamp"), int(viewSessionFiles[i]._originalFileLastModifTimestamp));
+
+			for (size_t j = 0, len = viewSessionFiles[i]._marks.size(); j < len; ++j)
+			{
+				size_t markLine = viewSessionFiles[i]._marks[j];
+				TiXmlNode *markNode = fileNameNode->InsertEndChild(TiXmlElement(TEXT("Mark")));
+				markNode->ToElement()->SetAttribute(TEXT("line"), markLine);
+			}
+
+			for (size_t j = 0, len = viewSessionFiles[i]._foldStates.size(); j < len; ++j)
+			{
+				size_t foldLine = viewSessionFiles[i]._foldStates[j];
+				TiXmlNode *foldNode = fileNameNode->InsertEndChild(TiXmlElement(TEXT("Fold")));
+				foldNode->ToElement()->SetAttribute(TEXT("line"), foldLine);
+			}
+		}
+	}
+
+	_pXmlSessionDoc->SaveFile();
+
+}
 void NppParameters::writeShortcuts()
 {
 	if (not _isAnyShortcutModified) return;

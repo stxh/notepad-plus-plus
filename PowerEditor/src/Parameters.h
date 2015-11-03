@@ -210,6 +210,7 @@ struct CmdLineParams
 	bool _isPreLaunch = false;
 	bool _showLoadingTime = false;
 	bool _alwaysOnTop = false;
+	bool _isNpp;					// open npp file
 	int _line2go   = -1;
 	int _column2go = -1;
 
@@ -1246,6 +1247,7 @@ const int RECENTFILES_SHOWONLYFILENAME = 0;
 class NppParameters final
 {
 public:
+	generic_string _nppFilePath;	// keep npp file name StXh
 	static NppParameters * getInstance() {return _pSelf;};
 	static LangType getLangIDFromStr(const TCHAR *langName);
 	static generic_string getLocPathFromStr(const generic_string & localizationCode);
@@ -1384,6 +1386,7 @@ public:
 	void writeUserDefinedLang();
 	void writeShortcuts();
 	void writeSession(const Session & session, const TCHAR *fileName = NULL);
+	void writeSessionToNppFile(const Session & session, const TCHAR *fileName = NULL); // add by StXh
 	bool writeFindHistory();
 
 	bool isExistingUserLangName(const TCHAR *newName) const

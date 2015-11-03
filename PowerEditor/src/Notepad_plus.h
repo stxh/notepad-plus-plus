@@ -280,6 +280,8 @@ public:
     void loadLastSession();
 	bool loadSession(Session & session, bool isSnapshotMode = false);
 
+	bool saveNppFile();
+	
 	void notifyBufferChanged(Buffer * buffer, int mask);
 	bool findInFiles();
 	bool replaceInFiles();

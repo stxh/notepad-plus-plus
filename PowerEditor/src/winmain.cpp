@@ -238,6 +238,8 @@ const TCHAR FLAG_HELP[] = TEXT("--help");
 const TCHAR FLAG_ALWAYS_ON_TOP[] = TEXT("-alwaysOnTop");
 const TCHAR FLAG_OPENSESSIONFILE[] = TEXT("-openSession");
 const TCHAR FLAG_RECURSIVE[] = TEXT("-r");
+const TCHAR FLAG_NPP[] = TEXT("-npp");	// -npp file: open workplace and session in npp file by StXh
+const TCHAR FLAG_IS_NPP_FILE[] = TEXT(".npp");	// .npp file: workplace and session in one npp file
 
 
 static void doException(Notepad_plus_Window & notepad_plus_plus)
@@ -301,12 +303,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
 	cmdLineParams._point.x = getNumberFromParam('x', params, cmdLineParams._isPointXValid);
 	cmdLineParams._point.y = getNumberFromParam('y', params, cmdLineParams._isPointYValid);
 	cmdLineParams._easterEggName = getEasterEggNameFromParam(params, cmdLineParams._quoteType);
+	NppParameters *pNppParameters = NppParameters::getInstance();
 
-
+	generic_string nppFileExt(FLAG_IS_NPP_FILE);
+	if (params.size() == 1 && checkSingleFile(params.at(0)) && nppFileExt == ::PathFindExtension(params.at(0)) ) {
+		// MessageBox(NULL, params.at(0), nppFileExt.c_str(), 0);
+		cmdLineParams._isNpp = true;
+		cmdLineParams._isNoSession = true;
+		pNppParameters->_nppFilePath.assign(params.at(0));
+	}
 	if (showHelp)
 		::MessageBox(NULL, COMMAND_ARG_HELP, TEXT("Notepad++ Command Argument Help"), MB_OK);
-
-	NppParameters *pNppParameters = NppParameters::getInstance();
 
 	if (cmdLineParams._localizationPath != TEXT(""))
 	{
