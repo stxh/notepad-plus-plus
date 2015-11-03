@@ -4813,6 +4813,19 @@ void Notepad_plus::loadCommandlineParams(const TCHAR * commandLine, CmdLineParam
 	FileNameStringSplitter fnss(commandLine);
 	const TCHAR *pFn = NULL;
 
+	if (fnss.size() == 1 && pCmdParams->_isNpp)
+	{
+		(NppParameters::getInstance())->setWorkSpaceFilePath(0,fnss.getFileName(0));
+
+		Session session2Load;
+		if ((NppParameters::getInstance())->loadSession(session2Load,fnss.getFileName(0) ))
+		{
+			//MessageBox(NULL,fnss.getFileName(0),(LPCWSTR)TEXT('Load npp file'),0);
+			loadSession(session2Load);
+		}
+		return;
+	}
+
 	// loading file as session file is allowed only when there is only one file
 	if (pCmdParams->_isSessionFile && fnss.size() == 1)
 	{
